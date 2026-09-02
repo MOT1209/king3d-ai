@@ -52,7 +52,11 @@ export const MeshStats = z.object({
   uv_layers: z.array(z.string()),
   material_slots: z.number(),
   empty_material_slots: z.number(),
+  /** Local bounding box times scale - ignores rotation. */
   dimensions: Vec3,
+  /** World-space extent. This is what the gates compare against, because a
+   *  rotated part's local dimensions describe a box that is not where it is. */
+  world_dimensions: Vec3,
   bbox_min: Vec3,
   bbox_max: Vec3,
   scale: Vec3,

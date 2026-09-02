@@ -1,0 +1,116 @@
+{
+  "spec_version": 1,
+  "id": "fixture_mug",
+  "created_at": "2026-09-02T00:00:00.000Z",
+  "source": {
+    "prompt": "A plain white ceramic coffee mug with a round side handle."
+  },
+  "object": {
+    "category": "drinkware",
+    "name": "ceramic coffee mug",
+    "description": "Straight-walled cylindrical mug, open at the top, with a round handle on one side.",
+    "overall_dimensions_m": {
+      "value": [0.116, 0.08, 0.1],
+      "provenance": "observed",
+      "confidence": 0.9,
+      "note": "Width includes the handle; body alone is 80mm across."
+    },
+    "symmetry": {
+      "value": "mirror_y",
+      "provenance": "observed",
+      "confidence": 0.95,
+      "note": "Mirror across the plane through the handle."
+    },
+    "visible_from": "three-quarter front, handle on the right",
+    "occluded_regions": ["interior floor", "underside", "far side of the handle"]
+  },
+  "components": [
+    {
+      "id": "body",
+      "name": "Mug body",
+      "role": "vessel",
+      "identity_defining": true,
+      "geometry": {
+        "kind": "hollow",
+        "primitive": "cylinder",
+        "options": { "vertices": 48 },
+        "wall_thickness_m": 0.005,
+        "open": "top",
+        "shade_smooth": true
+      },
+      "dimensions_m": {
+        "value": [0.08, 0.08, 0.1],
+        "provenance": "observed",
+        "confidence": 0.85
+      },
+      "position_m": {
+        "value": [0, 0, 0.05],
+        "provenance": "observed",
+        "confidence": 0.9
+      },
+      "material": "ceramic_white",
+      "notes": "Wall thickness is inferred; the reference only shows the rim."
+    },
+    {
+      "id": "handle",
+      "name": "Handle",
+      "role": "handle",
+      "identity_defining": true,
+      "geometry": {
+        "kind": "primitive",
+        "primitive": "torus",
+        "options": { "major_segments": 32, "minor_segments": 12 },
+        "shade_smooth": true
+      },
+      "dimensions_m": {
+        "value": [0.064, 0.064, 0.012],
+        "provenance": "observed",
+        "confidence": 0.75,
+        "note": "Local dimensions before the 90 degree rotation onto the XZ plane."
+      },
+      "position_m": {
+        "value": [0.05, 0, 0.055],
+        "provenance": "observed",
+        "confidence": 0.8
+      },
+      "rotation_deg": {
+        "value": [90, 0, 0],
+        "provenance": "observed",
+        "confidence": 0.9,
+        "note": "Ring lies in the XZ plane so it reads face-on from the front."
+      },
+      "material": "ceramic_white"
+    }
+  ],
+  "materials": [
+    {
+      "id": "ceramic_white",
+      "name": "White glazed ceramic",
+      "base_color": [0.9, 0.89, 0.86, 1.0],
+      "metallic": 0.0,
+      "roughness": 0.35,
+      "provenance": "observed",
+      "appearance": "Off-white glazed ceramic with a soft specular highlight."
+    }
+  ],
+  "camera": {
+    "azimuth_deg": 35,
+    "elevation_deg": 20,
+    "lens_mm": 50,
+    "margin": 1.2
+  },
+  "quality": {
+    "target_tris": 8000,
+    "max_materials": 2,
+    "require_uv": true,
+    "require_manifold": false,
+    "dimension_tolerance": 0.1
+  },
+  "render": {
+    "review_engine": "WORKBENCH",
+    "final_engine": "WORKBENCH",
+    "resolution": 384,
+    "samples": 8,
+    "views": ["front", "right", "three_quarter", "top"]
+  }
+}

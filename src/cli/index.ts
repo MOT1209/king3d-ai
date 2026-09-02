@@ -22,12 +22,17 @@ Commands:
   daemon stop            Stop it
   daemon status          Report whether it is running
   scene                  Print the current Blender scene as JSON
+  build [spec.json]      Build a SceneSpec: geometry, renders, gates, GLB export
   bench                  Measure startup and render cost on this machine
   test:blender           Run the Blender-side unit suite (inside Blender)
 
 Options:
   --json                 Machine-readable output where supported
   --blend <path>         .blend file to load for the command
+  --spec <path>          SceneSpec JSON for the build command (default: mug fixture)
+  --reference <path>     Reference image to place first on the contact sheet
+  --run-id <id>          Name the run directory instead of timestamping it
+  --no-export            Stop after the renders and gates
   --log-level <level>    debug | info | warn | error   (default: info)
   -h, --help             Show this help
 `;
@@ -40,6 +45,10 @@ async function main(argv: string[]): Promise<number> {
     options: {
       json: { type: "boolean", default: false },
       blend: { type: "string" },
+      spec: { type: "string" },
+      reference: { type: "string" },
+      "run-id": { type: "string" },
+      "no-export": { type: "boolean", default: false },
       "log-level": { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -127,6 +136,17 @@ async function main(argv: string[]): Promise<number> {
       process.stderr.write(`(batch ${outcome.wallMs}ms, blender work ${outcome.timings?.batch_ms ?? "?"}ms)\n`);
       await backend.close();
       return outcome.ok ? 0 : 1;
+    }
+
+    case "build": {
+      const { runBuild } = await import("./build.ts");
+      return runBuild({
+        specPath: (values["spec"] as string | undefined) ?? positionals[1],
+        ...(values["reference"] ? { referenceImage: values["reference"] as string } : {}),
+        ...(values["run-id"] ? { runId: values["run-id"] as string } : {}),
+        skipExport: values["no-export"] === true,
+        asJson,
+      });
     }
 
     case "bench": {
