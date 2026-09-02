@@ -1,0 +1,11 @@
+node_modules/
+dist/
+runs/
+*.blend1
+*.blend@
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+scratch/

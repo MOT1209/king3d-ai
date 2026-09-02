@@ -1,0 +1,33 @@
+{
+  "name": "ai3d",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI 3D Engineering Agent — image/text to game-ready 3D assets via Blender",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "ai3d": "./src/cli/index.ts"
+  },
+  "scripts": {
+    "ai3d": "node src/cli/index.ts",
+    "doctor": "node src/cli/index.ts doctor",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:blender": "node src/cli/index.ts test:blender",
+    "bench": "node src/cli/index.ts bench"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}
