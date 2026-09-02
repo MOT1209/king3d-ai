@@ -290,3 +290,19 @@ export function formatGateReport(report: GateReport): string {
     `  OVERALL ${s.overall.toFixed(2)}  -  ${report.passed ? "gates passed" : "gates failed"}\n`
   );
 }
+
+/**
+ * Re-weight an existing score set once a review has supplied a similarity value.
+ *
+ * The weights live here beside the ones `score()` uses, so there is one place
+ * that decides what a quality score is made of.
+ */
+export function withSimilarity(scores: Scores, similarity: number): Scores {
+  const overall =
+    scores.geometry * 0.35 +
+    scores.material * 0.2 +
+    scores.optimization * 0.15 +
+    scores.export * 0.1 +
+    similarity * 0.2;
+  return { ...scores, similarity: round(similarity), overall: round(overall) };
+}

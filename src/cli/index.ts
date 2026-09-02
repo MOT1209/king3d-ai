@@ -23,6 +23,7 @@ Commands:
   daemon status          Report whether it is running
   scene                  Print the current Blender scene as JSON
   build [spec.json]      Build a SceneSpec: geometry, renders, gates, GLB export
+  review <run-id>        Judge a build against its reference and propose repairs
   bench                  Measure startup and render cost on this machine
   test:blender           Run the Blender-side unit suite (inside Blender)
 
@@ -33,6 +34,7 @@ Options:
   --reference <path>     Reference image to place first on the contact sheet
   --run-id <id>          Name the run directory instead of timestamping it
   --no-export            Stop after the renders and gates
+  --rebuild              After a review, rebuild from the repaired spec
   --log-level <level>    debug | info | warn | error   (default: info)
   -h, --help             Show this help
 `;
@@ -49,6 +51,7 @@ async function main(argv: string[]): Promise<number> {
       reference: { type: "string" },
       "run-id": { type: "string" },
       "no-export": { type: "boolean", default: false },
+      rebuild: { type: "boolean", default: false },
       "log-level": { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -145,6 +148,21 @@ async function main(argv: string[]): Promise<number> {
         ...(values["reference"] ? { referenceImage: values["reference"] as string } : {}),
         ...(values["run-id"] ? { runId: values["run-id"] as string } : {}),
         skipExport: values["no-export"] === true,
+        asJson,
+      });
+    }
+
+    case "review": {
+      const { runReview } = await import("./review.ts");
+      const runId = positionals[1];
+      if (!runId) {
+        process.stderr.write("review needs a run id: ai3d review <run-id>\n");
+        return 1;
+      }
+      return runReview({
+        runId,
+        rebuild: values["rebuild"] === true,
+        ...(values["reference"] ? { referenceImage: values["reference"] as string } : {}),
         asJson,
       });
     }
