@@ -89,10 +89,23 @@
       <div class="muted">drag to orbit &middot; scroll to zoom &middot; right-drag to pan</div>
     </aside>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/examples/js/controls/OrbitControls.js"></script>
-    <script>
+    <!-- cdnjs only mirrors three.js's core UMD build, not examples/js (OrbitControls,
+         GLTFLoader 404 there for every recent version) - jsdelivr mirrors the full
+         npm package, so the viewer loads as real ES modules instead. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <!-- AI3D_MANIFEST: the server injects window.__AI3D__ right before this tag. -->
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
       // The server injects a manifest describing which run is being viewed.
       const manifest = window.__AI3D__ || { glb: "model.glb" };
 
@@ -111,7 +124,7 @@
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       stage.appendChild(renderer.domElement);
 
-      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.autoRotateSpeed = 1.6;
 
@@ -183,7 +196,7 @@
           .join(" x ");
       }
 
-      new THREE.GLTFLoader().load(
+      new GLTFLoader().load(
         manifest.glb,
         (gltf) => {
           model = gltf.scene;

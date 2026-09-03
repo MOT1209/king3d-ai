@@ -4,35 +4,110 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ai3d dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
+    <!-- Icon sprite: a small hand-authored line-icon set (24x24, stroke-based,
+         consistent 1.75 stroke weight) so nothing in the UI relies on emoji or
+         raster art. Referenced everywhere via <svg class="icon"><use .../></svg>. -->
+    <svg style="display: none" aria-hidden="true">
+      <defs>
+        <symbol id="icon-cube" viewBox="0 0 24 24">
+          <path d="M12 2 3 7v10l9 5 9-5V7l-9-5Z" />
+          <path d="M3 7l9 5 9-5M12 12v10" />
+        </symbol>
+        <symbol id="icon-plus-circle" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8v8M8 12h8" />
+        </symbol>
+        <symbol id="icon-upload" viewBox="0 0 24 24">
+          <path d="M12 15V4M7.5 8.5 12 4l4.5 4.5" />
+          <path d="M4 16v2.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V16" />
+        </symbol>
+        <symbol id="icon-file" viewBox="0 0 24 24">
+          <path d="M6 2.5h8L19 8v13a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 21V4a1.5 1.5 0 0 1 1-1.5Z" />
+          <path d="M14 2.5V8h5M8.5 13h7M8.5 16.5h7" />
+        </symbol>
+        <symbol id="icon-play" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M10 8.3v7.4l6-3.7-6-3.7Z" />
+        </symbol>
+        <symbol id="icon-clipboard" viewBox="0 0 24 24">
+          <path d="M9 3h6a1 1 0 0 1 1 1v1H8V4a1 1 0 0 1 1-1Z" />
+          <rect x="5.5" y="5" width="13" height="16" rx="1.75" />
+          <path d="m9 13 2 2 4-4.5" />
+        </symbol>
+        <symbol id="icon-eye" viewBox="0 0 24 24">
+          <path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
+        </symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="m8 12.3 2.6 2.6L16 9.5" />
+        </symbol>
+        <symbol id="icon-x" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="m9 9 6 6M15 9l-6 6" />
+        </symbol>
+        <symbol id="icon-alert" viewBox="0 0 24 24">
+          <path d="M12 3 2 20h20L12 3Z" />
+          <path d="M12 9.5v4.2" />
+          <circle cx="12" cy="17" r="0.9" fill="currentColor" stroke="none" />
+        </symbol>
+        <symbol id="icon-clock" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5.3l3.5 2" />
+        </symbol>
+        <symbol id="icon-empty" viewBox="0 0 24 24">
+          <path d="M12 2 3 7v10l9 5 9-5V7l-9-5Z" opacity=".4" />
+          <path d="M3 7l9 5 9-5M12 12v10" opacity=".4" />
+        </symbol>
+      </defs>
+    </svg>
+
     <header>
-      <h1>ai3d</h1>
+      <div class="brand">
+        <svg class="icon icon-brand" aria-hidden="true"><use href="#icon-cube" /></svg>
+        <h1>ai3d</h1>
+      </div>
       <span class="subtitle">image / prompt &rarr; verified 3D asset</span>
     </header>
 
     <main>
       <aside id="sidebar">
-        <form id="new-run-form">
+        <form id="new-run-form" class="card">
           <h2>New run</h2>
-          <label class="file-drop">
+          <label class="file-drop" for="new-image">
+            <svg class="icon" aria-hidden="true"><use href="#icon-upload" /></svg>
+            <span>Choose reference image</span>
+            <span class="file-drop-hint">PNG or JPEG, or drag &amp; drop</span>
             <input type="file" id="new-image" accept="image/png,image/jpeg" />
-            <span>choose reference image</span>
           </label>
-          <img id="image-preview" hidden />
-          <textarea id="new-prompt" placeholder="or describe the object in words" rows="3"></textarea>
-          <textarea id="new-hints" placeholder="extra hints (optional): scale, use, material" rows="2"></textarea>
-          <button type="submit" id="new-run-submit">Create run</button>
+          <img id="image-preview" alt="Selected reference preview" hidden />
+          <label class="field-label" for="new-prompt">Description</label>
+          <textarea id="new-prompt" placeholder="describe the object in words" rows="3"></textarea>
+          <label class="field-label" for="new-hints">Hints (optional)</label>
+          <textarea id="new-hints" placeholder="scale, use, material..." rows="2"></textarea>
+          <button type="submit" id="new-run-submit" class="btn btn-primary">
+            <svg class="icon" aria-hidden="true"><use href="#icon-plus-circle" /></svg>
+            Create run
+          </button>
         </form>
 
-        <h2>Runs</h2>
+        <h2 class="section-label">Runs</h2>
         <ul id="run-list"></ul>
       </aside>
 
       <section id="content">
         <div id="detail-empty" class="empty-state">
-          <p>Select a run, or create one.</p>
+          <svg class="icon icon-empty" aria-hidden="true"><use href="#icon-empty" /></svg>
+          <p>Select a run, or create one to begin.</p>
         </div>
 
         <div id="detail" hidden>
@@ -41,31 +116,49 @@
               <h2 id="detail-title">&mdash;</h2>
               <code id="detail-id"></code>
             </div>
-            <span id="detail-status" class="run-status"></span>
+            <span id="detail-status" class="status-pill"></span>
           </div>
 
-          <nav class="tabs">
-            <button class="tab-button active" data-tab="spec">Spec</button>
-            <button class="tab-button" data-tab="build">Build</button>
-            <button class="tab-button" data-tab="report">Report</button>
-            <button class="tab-button" data-tab="model">Model</button>
-            <button class="tab-button" data-tab="review">Review</button>
+          <nav class="tabs" role="tablist">
+            <button class="tab-button active" data-tab="spec" role="tab" aria-selected="true">
+              <svg class="icon" aria-hidden="true"><use href="#icon-file" /></svg>Spec
+            </button>
+            <button class="tab-button" data-tab="build" role="tab" aria-selected="false">
+              <svg class="icon" aria-hidden="true"><use href="#icon-play" /></svg>Build
+            </button>
+            <button class="tab-button" data-tab="report" role="tab" aria-selected="false">
+              <svg class="icon" aria-hidden="true"><use href="#icon-clipboard" /></svg>Report
+            </button>
+            <button class="tab-button" data-tab="model" role="tab" aria-selected="false">
+              <svg class="icon" aria-hidden="true"><use href="#icon-cube" /></svg>Model
+            </button>
+            <button class="tab-button" data-tab="review" role="tab" aria-selected="false">
+              <svg class="icon" aria-hidden="true"><use href="#icon-eye" /></svg>Review
+            </button>
           </nav>
 
-          <div id="tab-spec" class="tab-pane active"></div>
-          <div id="tab-build" class="tab-pane"></div>
-          <div id="tab-report" class="tab-pane"></div>
-          <div id="tab-model" class="tab-pane"></div>
-          <div id="tab-review" class="tab-pane"></div>
+          <div id="tab-spec" class="tab-pane active" role="tabpanel"></div>
+          <div id="tab-build" class="tab-pane" role="tabpanel"></div>
+          <div id="tab-report" class="tab-pane" role="tabpanel"></div>
+          <div id="tab-model" class="tab-pane" role="tabpanel"></div>
+          <div id="tab-review" class="tab-pane" role="tabpanel"></div>
         </div>
       </section>
     </main>
 
-    <div id="toast"></div>
+    <div id="toast" role="status" aria-live="polite"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="/app.js"></script>
+    <!-- cdnjs only mirrors three.js's core UMD build, not examples/js (OrbitControls,
+         GLTFLoader 404 there for every recent version) - jsdelivr mirrors the full
+         npm package, so the viewer loads as real ES modules instead. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="/app.js"></script>
   </body>
 </html>

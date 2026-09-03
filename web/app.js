@@ -1,6 +1,14 @@
 // ai3d dashboard - vanilla JS, no build step. Every action re-fetches the run
 // from the server rather than tracking client-side state, so the UI can never
 // drift from what the pipeline actually did.
+//
+// Loaded as a real ES module (see the importmap in index.html) because cdnjs's
+// three.js package never shipped examples/js - OrbitControls and GLTFLoader
+// 404 there for every recent version, which is why the module build is used
+// instead of the classic global-script UMD pattern.
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -25,7 +33,8 @@ async function api(method, path, body) {
 
 function toast(message, isError) {
   const el = $("#toast");
-  el.textContent = message;
+  const icon = isError ? "icon-x" : "icon-check";
+  el.innerHTML = `<svg class="icon" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><use href="#${icon}"/></svg>${escapeHtml(message)}`;
   el.classList.toggle("error", !!isError);
   el.classList.add("show");
   clearTimeout(toast._t);
@@ -260,13 +269,14 @@ function handleSseFrame(frame, log) {
   } else if (event === "done") {
     const row = document.createElement("div");
     row.className = "build-done " + (parsed.passed ? "ok" : "fail");
-    row.textContent = `done - overall ${parsed.scores.overall.toFixed(2)} - ${parsed.passed ? "gates passed" : "gates failed"}`;
+    const icon = parsed.passed ? "icon-check" : "icon-x";
+    row.innerHTML = `<svg class="icon" aria-hidden="true"><use href="#${icon}"/></svg>done - overall ${parsed.scores.overall.toFixed(2)} - ${parsed.passed ? "gates passed" : "gates failed"}`;
     log.appendChild(row);
     toast(parsed.passed ? "build passed" : "build finished with failing gates", !parsed.passed);
   } else if (event === "error") {
     const row = document.createElement("div");
     row.className = "build-done fail";
-    row.textContent = "error: " + parsed.message;
+    row.innerHTML = `<svg class="icon" aria-hidden="true"><use href="#icon-x"/></svg>error: ${escapeHtml(parsed.message)}`;
     log.appendChild(row);
     toast(parsed.message, true);
   }
@@ -285,10 +295,12 @@ function renderReportTab(report) {
     `<div class="score"><span>${label}</span><span>${value === undefined ? "-" : value.toFixed(2)}</span></div>`;
 
   const gateRows = (report.gates || [])
-    .map(
-      (g) =>
-        `<div class="gate ${g.passed ? "pass" : g.severity}"><span>${g.passed ? "PASS" : g.severity === "error" ? "FAIL" : "WARN"}</span><span>${escapeHtml(g.id)}</span><span>${escapeHtml(g.message)}</span></div>`,
-    )
+    .map((g) => {
+      const cls = g.passed ? "pass" : g.severity;
+      const icon = g.passed ? "icon-check" : g.severity === "error" ? "icon-x" : "icon-alert";
+      const label = g.passed ? "PASS" : g.severity === "error" ? "FAIL" : "WARN";
+      return `<div class="gate ${cls}"><svg class="icon" aria-hidden="true"><use href="#${icon}"/></svg><span title="${label}">${escapeHtml(g.id)}</span><span>${escapeHtml(g.message)}</span></div>`;
+    })
     .join("");
 
   pane.innerHTML = `
@@ -328,7 +340,7 @@ function initViewer(glbUrl) {
   viewerCamera = new THREE.PerspectiveCamera(45, 1, 0.001, 1000);
   viewerRenderer = new THREE.WebGLRenderer({ antialias: true });
   stage.appendChild(viewerRenderer.domElement);
-  viewerControls = new THREE.OrbitControls(viewerCamera, viewerRenderer.domElement);
+  viewerControls = new OrbitControls(viewerCamera, viewerRenderer.domElement);
   viewerControls.enableDamping = true;
   viewerControls.autoRotate = true;
   viewerControls.autoRotateSpeed = 1.6;
@@ -352,7 +364,7 @@ function initViewer(glbUrl) {
   resize();
   new ResizeObserver(resize).observe(stage);
 
-  new THREE.GLTFLoader().load(
+  new GLTFLoader().load(
     glbUrl,
     (gltf) => {
       if (viewerModel) viewerScene.remove(viewerModel);
@@ -477,7 +489,26 @@ document.addEventListener("DOMContentLoaded", () => {
       preview.hidden = true;
     }
   });
-  $$(".tab-button").forEach((b) => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+  // The <input type="file"> already covers the whole drop label and handles
+  // drop natively; this only adds the visual dragover state on top of it.
+  const dropZone = $(".file-drop");
+  ["dragenter", "dragover"].forEach((evt) =>
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    }),
+  );
+  ["dragleave", "drop"].forEach((evt) =>
+    dropZone.addEventListener(evt, () => dropZone.classList.remove("dragover")),
+  );
+
+  $$(".tab-button").forEach((b) =>
+    b.addEventListener("click", () => {
+      switchTab(b.dataset.tab);
+      $$(".tab-button").forEach((btn) => btn.setAttribute("aria-selected", String(btn === b)));
+    }),
+  );
 
   refreshRunList();
   setInterval(refreshRunList, 8000);

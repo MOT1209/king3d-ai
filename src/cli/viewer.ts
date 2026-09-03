@@ -45,8 +45,8 @@ export async function runViewer(options: ViewerOptions): Promise<number> {
   };
 
   const page = (await readFile(join(paths.viewer, "index.html"), "utf8")).replace(
-    "<script src=",
-    `<script>window.__AI3D__ = ${JSON.stringify(manifest)};</script>\n    <script src=`,
+    "<!-- AI3D_MANIFEST: the server injects window.__AI3D__ right before this tag. -->",
+    `<script>window.__AI3D__ = ${JSON.stringify(manifest)};</script>`,
   );
 
   const port = options.port ?? 5173;
