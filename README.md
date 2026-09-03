@@ -10,30 +10,34 @@ agent), without copying either.
 
 ## Status
 
-Working and tested:
+The pipeline runs end to end: reference image in, verified GLB out.
 
 * **Blender bridge** - 24 typed commands, two transports, one shared Python
   implementation. `docs/blender-bridge.md`
 * **SceneSpec** - the source of truth, with per-field provenance separating what
   was observed from what was inferred.
+* **Analysis** - reference image to spec draft. `ai3d gen --image`
 * **Deterministic build** - geometry, lighting, renders, 11 quality gates, and a
   GLB export verified by re-import. `ai3d build`
-* **Review and repair** - a resumable judgement stage that returns a similarity
-  score and defects, each optionally carrying a fix applied back to the spec.
-  `ai3d review`
+* **Review and repair** - similarity score plus defects, each optionally carrying
+  a fix applied back to the spec. `ai3d review --rebuild`
+* **Viewer** - the exported GLB in a browser. `ai3d viewer`
 
-78 tests pass: 57 under vitest, 21 inside Blender.
+88 tests pass: 67 under vitest, 21 inside Blender.
 
-Not built yet: image analysis (reference image straight to spec), multi-view
-input, LOD generation, and the web interface.
+Not built yet: multi-view input, LOD generation, external 3D-generation
+providers, and a web interface.
 
 ## Quick start
 
 ```bash
 npm install
-node src/cli/index.ts doctor            # check the environment
-node src/cli/index.ts build             # build the bundled mug fixture
-node src/cli/index.ts review <run-id>   # judge it, and repair the spec
+node src/cli/index.ts doctor                  # check the environment
+node src/cli/index.ts fixtures:build          # render a reference to work from
+node src/cli/index.ts gen --image tests/fixtures/mug_reference.png --run-id slice
+#   answer the spec request it prints, then re-run the same command
+node src/cli/index.ts review slice            # judge it, repair the spec
+node src/cli/index.ts viewer slice            # look at the GLB
 ```
 
 `docs/setup.md` covers requirements and configuration. No AI API key is needed.

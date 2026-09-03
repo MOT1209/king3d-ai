@@ -22,16 +22,22 @@ Commands:
   daemon stop            Stop it
   daemon status          Report whether it is running
   scene                  Print the current Blender scene as JSON
+  gen --image <path>     Full pipeline from a reference image or --prompt
   build [spec.json]      Build a SceneSpec: geometry, renders, gates, GLB export
   review <run-id>        Judge a build against its reference and propose repairs
+  viewer <run-id>        Serve the exported GLB in a browser
   bench                  Measure startup and render cost on this machine
   test:blender           Run the Blender-side unit suite (inside Blender)
+  fixtures:build         Render the ground-truth reference image
 
 Options:
   --json                 Machine-readable output where supported
   --blend <path>         .blend file to load for the command
   --spec <path>          SceneSpec JSON for the build command (default: mug fixture)
   --reference <path>     Reference image to place first on the contact sheet
+  --image <path>         Reference image for gen
+  --prompt <text>        Text description for gen, when there is no image
+  --hints <text>         Extra context for the analysis stage
   --run-id <id>          Name the run directory instead of timestamping it
   --no-export            Stop after the renders and gates
   --rebuild              After a review, rebuild from the repaired spec
@@ -52,6 +58,11 @@ async function main(argv: string[]): Promise<number> {
       "run-id": { type: "string" },
       "no-export": { type: "boolean", default: false },
       rebuild: { type: "boolean", default: false },
+      image: { type: "string" },
+      prompt: { type: "string" },
+      hints: { type: "string" },
+      engine: { type: "string" },
+      port: { type: "string" },
       "log-level": { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -152,6 +163,25 @@ async function main(argv: string[]): Promise<number> {
       });
     }
 
+    case "gen": {
+      const { runGen } = await import("./gen.ts");
+      return runGen({
+        ...(values["image"] ? { imagePath: values["image"] as string } : {}),
+        ...(values["prompt"] ? { prompt: values["prompt"] as string } : {}),
+        ...(values["hints"] ? { hints: values["hints"] as string } : {}),
+        ...(values["run-id"] ? { runId: values["run-id"] as string } : {}),
+        skipExport: values["no-export"] === true,
+        asJson,
+      });
+    }
+
+    case "fixtures:build": {
+      const { runFixtures } = await import("./fixtures.ts");
+      return runFixtures({
+        ...(values["engine"] ? { engine: values["engine"] as "WORKBENCH" | "EEVEE" | "CYCLES" } : {}),
+      });
+    }
+
     case "review": {
       const { runReview } = await import("./review.ts");
       const runId = positionals[1];
@@ -164,6 +194,19 @@ async function main(argv: string[]): Promise<number> {
         rebuild: values["rebuild"] === true,
         ...(values["reference"] ? { referenceImage: values["reference"] as string } : {}),
         asJson,
+      });
+    }
+
+    case "viewer": {
+      const { runViewer } = await import("./viewer.ts");
+      const runId = positionals[1];
+      if (!runId) {
+        process.stderr.write("viewer needs a run id: ai3d viewer <run-id>\n");
+        return 1;
+      }
+      return runViewer({
+        runId,
+        ...(values["port"] ? { port: Number(values["port"]) } : {}),
       });
     }
 

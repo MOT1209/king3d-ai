@@ -136,3 +136,44 @@ runs/<id>/
   report.json            gates, scores, timings, artefact paths, the review
   prompts/               request/response pairs
 ```
+
+## Running it
+
+```bash
+ai3d gen --image ref.png --run-id chair   # asks for a spec, then stops
+#   read runs/chair/prompts/spec.request.md, look at the image,
+#   write runs/chair/prompts/spec.response.json
+ai3d gen --run-id chair                   # builds, gates, exports
+ai3d review chair                         # asks for a judgement, then stops
+#   read the request, look at runs/chair/contact_sheet.png, write the response
+ai3d review chair --rebuild               # applies fixes and rebuilds
+ai3d viewer chair                         # turn the GLB over in a browser
+```
+
+`ai3d build --spec x.json` skips the analysis stage when a spec already exists.
+
+## The synthetic reference
+
+Testing image-to-3D needs a reference image, and a photograph makes the test
+depend on an asset nobody controls and whose correct answer nobody knows. So
+`ai3d fixtures:build` renders one from a spec we already have:
+
+```
+src/spec/fixtures/mug.json  --Cycles-->  tests/fixtures/mug_reference.png
+```
+
+The ground truth is then known exactly, and a spec reconstructed from the image
+alone can be compared against it numerically rather than only by eye.
+
+Measured on the current slice - reconstructing the mug from the rendered
+reference with no access to the source spec:
+
+| Field | Ground truth | Reconstructed | Error |
+|---|---|---|---|
+| body dimensions | 0.080, 0.080, 0.100 | 0.082, 0.082, 0.104 | 4.0% |
+| body position | 0, 0, 0.050 | 0, 0, 0.052 | 4.0% |
+| handle dimensions | 0.064, 0.064, 0.012 | 0.062, 0.062, 0.013 | 8.3% |
+| handle position | 0.050, 0, 0.055 | 0.049, 0, 0.055 | 2.0% |
+| handle rotation | 90, 0, 0 | 90, 0, 0 | 0% |
+
+Component count, ids and geometry strategies all matched.

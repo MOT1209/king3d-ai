@@ -173,7 +173,13 @@ export const RenderProfile = z.object({
 });
 export type RenderProfile = z.infer<typeof RenderProfile>;
 
-export const SceneSpec = z
+/**
+ * The spec fields themselves, before cross-reference validation.
+ *
+ * Kept separate so the analysis stage can ask for a draft without the
+ * bookkeeping fields (id, timestamp, source) that the pipeline fills in itself.
+ */
+export const SceneSpecFields = z
   .object({
     spec_version: z.literal(SPEC_VERSION).default(SPEC_VERSION),
     id: z.string(),
@@ -199,60 +205,102 @@ export const SceneSpec = z
     quality: QualityTargets.default({}),
     render: RenderProfile.default({}),
   })
-  .superRefine((spec, ctx) => {
-    const materialIds = new Set(spec.materials.map((m) => m.id));
-    const componentIds = new Set<string>();
+  .strict();
 
-    for (const component of spec.components) {
-      if (componentIds.has(component.id)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["components"],
-          message: `duplicate component id "${component.id}"`,
-        });
-      }
-      componentIds.add(component.id);
+/**
+ * Cross-reference checks, shared by the full spec and the analysis draft.
+ *
+ * These are the errors a schema alone cannot catch: names that point at nothing,
+ * and names that point at each other.
+ */
+function checkReferences(
+  spec: { components: ComponentSpec[]; materials: MaterialSpecEntry[] },
+  ctx: z.RefinementCtx,
+): void {
+  const materialIds = new Set(spec.materials.map((m) => m.id));
+  const componentIds = new Set<string>();
 
-      if (!materialIds.has(component.material)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["components"],
-          message: `component "${component.id}" references unknown material "${component.material}"`,
-        });
-      }
+  for (const component of spec.components) {
+    if (componentIds.has(component.id)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["components"],
+        message: `duplicate component id "${component.id}"`,
+      });
     }
+    componentIds.add(component.id);
 
-    for (const component of spec.components) {
-      if (component.parent && !componentIds.has(component.parent)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["components"],
-          message: `component "${component.id}" has unknown parent "${component.parent}"`,
-        });
-      }
-      if (component.parent === component.id) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["components"],
-          message: `component "${component.id}" cannot be its own parent`,
-        });
-      }
+    if (!materialIds.has(component.material)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["components"],
+        message: `component "${component.id}" references unknown material "${component.material}"`,
+      });
     }
+  }
 
-    // An unused material is usually a sign the spec was edited inconsistently.
-    const used = new Set(spec.components.map((c) => c.material));
-    for (const material of spec.materials) {
-      if (!used.has(material.id)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["materials"],
-          message: `material "${material.id}" is not used by any component`,
-        });
-      }
+  for (const component of spec.components) {
+    if (component.parent && !componentIds.has(component.parent)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["components"],
+        message: `component "${component.id}" has unknown parent "${component.parent}"`,
+      });
     }
-  });
+    if (component.parent === component.id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["components"],
+        message: `component "${component.id}" cannot be its own parent`,
+      });
+    }
+  }
+
+  // An unused material is usually a sign the spec was edited inconsistently.
+  const used = new Set(spec.components.map((c) => c.material));
+  for (const material of spec.materials) {
+    if (!used.has(material.id)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["materials"],
+        message: `material "${material.id}" is not used by any component`,
+      });
+    }
+  }
+}
+
+export const SceneSpec = SceneSpecFields.superRefine(checkReferences);
 
 export type SceneSpec = z.infer<typeof SceneSpec>;
+
+/**
+ * What the analysis stage is asked to produce.
+ *
+ * The bookkeeping fields are omitted because they are the pipeline's to fill in;
+ * asking a reviewer to invent a run id and a timestamp only invites drift.
+ */
+export const SpecDraft = SceneSpecFields.omit({
+  spec_version: true,
+  id: true,
+  created_at: true,
+  source: true,
+}).superRefine(checkReferences);
+
+export type SpecDraft = z.infer<typeof SpecDraft>;
+
+/** Complete a draft into a full spec by supplying what the pipeline knows. */
+export function completeDraft(
+  draft: SpecDraft,
+  meta: { id: string; source: { image?: string; prompt?: string } },
+): SceneSpec {
+  return parseSceneSpec({
+    ...draft,
+    spec_version: SPEC_VERSION,
+    id: meta.id,
+    created_at: new Date().toISOString(),
+    source: meta.source,
+  });
+}
 
 /** Parse untrusted spec JSON, with a readable error listing every problem. */
 export function parseSceneSpec(data: unknown): SceneSpec {

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ai3d viewer</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #14161a;
+        --panel: #1c1f25;
+        --line: #2c313a;
+        --text: #e6e8ec;
+        --muted: #9aa3b0;
+        --accent: #6ea8fe;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 13px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        height: 100vh;
+        display: grid;
+        grid-template-columns: 1fr 280px;
+      }
+      #stage { position: relative; min-width: 0; }
+      canvas { display: block; }
+      aside {
+        background: var(--panel);
+        border-left: 1px solid var(--line);
+        padding: 16px;
+        overflow-y: auto;
+      }
+      h1 { font-size: 14px; margin: 0 0 4px; letter-spacing: 0.02em; }
+      .muted { color: var(--muted); }
+      .row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+      .row span:last-child { font-variant-numeric: tabular-nums; }
+      h2 {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin: 20px 0 6px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 4px;
+      }
+      #status {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        padding: 24px;
+        color: var(--muted);
+      }
+      #status.hidden { display: none; }
+      code {
+        background: #0e1013;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 12px;
+      }
+      label { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <div id="status">loading model&hellip;</div>
+    </div>
+    <aside>
+      <h1 id="title">ai3d viewer</h1>
+      <div class="muted" id="subtitle">&mdash;</div>
+
+      <h2>Model</h2>
+      <div class="row"><span>objects</span><span id="m-objects">&mdash;</span></div>
+      <div class="row"><span>triangles</span><span id="m-tris">&mdash;</span></div>
+      <div class="row"><span>materials</span><span id="m-materials">&mdash;</span></div>
+      <div class="row"><span>size (m)</span><span id="m-size">&mdash;</span></div>
+      <div class="row"><span>file</span><span id="m-bytes">&mdash;</span></div>
+
+      <h2>View</h2>
+      <label><input type="checkbox" id="opt-wireframe" /> wireframe</label>
+      <label><input type="checkbox" id="opt-grid" checked /> grid</label>
+      <label><input type="checkbox" id="opt-spin" checked /> auto-rotate</label>
+
+      <h2>Controls</h2>
+      <div class="muted">drag to orbit &middot; scroll to zoom &middot; right-drag to pan</div>
+    </aside>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+      // The server injects a manifest describing which run is being viewed.
+      const manifest = window.__AI3D__ || { glb: "model.glb" };
+
+      const stage = document.getElementById("stage");
+      const status = document.getElementById("status");
+      const setStatus = (html) => {
+        status.innerHTML = html;
+        status.classList.remove("hidden");
+      };
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x14161a);
+
+      const camera = new THREE.PerspectiveCamera(45, 1, 0.001, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      stage.appendChild(renderer.domElement);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.autoRotateSpeed = 1.6;
+
+      scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x2a2620, 2.0));
+      const key = new THREE.DirectionalLight(0xffffff, 2.4);
+      key.position.set(3, 4, 5);
+      scene.add(key);
+      const fill = new THREE.DirectionalLight(0xbfd4ff, 0.8);
+      fill.position.set(-4, 1, -2);
+      scene.add(fill);
+
+      let grid = null;
+      let model = null;
+
+      function resize() {
+        const w = stage.clientWidth;
+        const h = stage.clientHeight;
+        renderer.setSize(w, h, false);
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+      addEventListener("resize", resize);
+
+      function fitCamera(object) {
+        const box = new THREE.Box3().setFromObject(object);
+        const size = box.getSize(new THREE.Vector3());
+        const centre = box.getCenter(new THREE.Vector3());
+        const radius = Math.max(size.length() / 2, 1e-4);
+
+        // Clip planes track the model's scale: a 10cm mug and a 4m car both need
+        // to be visible without the near plane swallowing them.
+        camera.near = radius / 100;
+        camera.far = radius * 100;
+        const distance = radius / Math.sin((camera.fov * Math.PI) / 360);
+        camera.position.set(centre.x + distance * 0.6, centre.y + distance * 0.45, centre.z + distance * 0.8);
+        camera.updateProjectionMatrix();
+        controls.target.copy(centre);
+        controls.update();
+
+        if (grid) scene.remove(grid);
+        const span = Math.max(size.x, size.z) * 4;
+        grid = new THREE.GridHelper(span, 20, 0x39404d, 0x262c35);
+        grid.position.y = box.min.y;
+        grid.visible = document.getElementById("opt-grid").checked;
+        scene.add(grid);
+
+        return { size, box };
+      }
+
+      function summarise(object, size) {
+        let objects = 0;
+        let tris = 0;
+        const materials = new Set();
+        object.traverse((node) => {
+          if (!node.isMesh) return;
+          objects += 1;
+          const geometry = node.geometry;
+          tris += geometry.index ? geometry.index.count / 3 : geometry.attributes.position.count / 3;
+          for (const m of Array.isArray(node.material) ? node.material : [node.material]) {
+            if (m) materials.add(m.uuid);
+          }
+        });
+        document.getElementById("m-objects").textContent = objects;
+        document.getElementById("m-tris").textContent = Math.round(tris).toLocaleString();
+        document.getElementById("m-materials").textContent = materials.size;
+        document.getElementById("m-size").textContent = [size.x, size.y, size.z]
+          .map((v) => v.toFixed(3))
+          .join(" x ");
+      }
+
+      new THREE.GLTFLoader().load(
+        manifest.glb,
+        (gltf) => {
+          model = gltf.scene;
+          scene.add(model);
+          const { size } = fitCamera(model);
+          summarise(model, size);
+          status.classList.add("hidden");
+        },
+        undefined,
+        () => {
+          setStatus(
+            "could not load <code>" +
+              manifest.glb +
+              "</code><br><br>the run may not have reached the export stage yet",
+          );
+        },
+      );
+
+      document.getElementById("opt-wireframe").addEventListener("change", (e) => {
+        if (!model) return;
+        model.traverse((node) => {
+          if (!node.isMesh) return;
+          for (const m of Array.isArray(node.material) ? node.material : [node.material]) {
+            if (m) m.wireframe = e.target.checked;
+          }
+        });
+      });
+      document.getElementById("opt-grid").addEventListener("change", (e) => {
+        if (grid) grid.visible = e.target.checked;
+      });
+      document.getElementById("opt-spin").addEventListener("change", (e) => {
+        controls.autoRotate = e.target.checked;
+      });
+      controls.autoRotate = true;
+
+      if (manifest.title) document.getElementById("title").textContent = manifest.title;
+      if (manifest.subtitle) document.getElementById("subtitle").textContent = manifest.subtitle;
+      if (manifest.bytes) {
+        document.getElementById("m-bytes").textContent = (manifest.bytes / 1024).toFixed(1) + " KB";
+      }
+
+      resize();
+      (function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      })();
+    </script>
+  </body>
+</html>

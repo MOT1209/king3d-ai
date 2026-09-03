@@ -60,11 +60,15 @@ export async function runReview(options: ReviewCommandOptions): Promise<number> 
     passed: stored.passed ?? false,
   };
 
+  // A run copies its reference in, so it knows what it was built from without
+  // being told again. Only fall back to the flag for a run that has none.
+  const reference = options.referenceImage ?? findRunReference(rp.dir);
+
   const provider = new AgentInLoopProvider({ promptDir: rp.prompts });
   const request = buildReviewRequest({
     spec,
     sheetPath: rp.sheet,
-    ...(options.referenceImage ? { referencePath: options.referenceImage } : {}),
+    ...(reference ? { referencePath: reference } : {}),
     gates,
     cycle: 0,
   });
@@ -154,7 +158,7 @@ export async function runReview(options: ReviewCommandOptions): Promise<number> 
     process.stderr.write(`\nrebuilding from the repaired spec as ${nextId}\n`);
     const result = await buildFromSpec(repair.spec, {
       runId: nextId,
-      ...(options.referenceImage ? { referenceImage: options.referenceImage } : {}),
+      ...(reference ? { referenceImage: reference } : {}),
       onStage: (name, detail) => process.stderr.write(`  ${name.padEnd(10)} ${detail}\n`),
     });
     process.stdout.write(`\n${formatGateReport(result.report)}`);
@@ -163,4 +167,13 @@ export async function runReview(options: ReviewCommandOptions): Promise<number> 
   }
 
   return p0.length === 0 ? 0 : 1;
+}
+
+/** The reference image a run was built from, if it kept one. */
+function findRunReference(dir: string): string | undefined {
+  for (const name of ["reference.png", "reference.jpg", "reference.jpeg"]) {
+    const candidate = join(dir, name);
+    if (existsSync(candidate)) return candidate;
+  }
+  return undefined;
 }
