@@ -1,4 +1,4 @@
-// ai3d dashboard - vanilla JS, no build step. Every action re-fetches the run
+// king3d dashboard - vanilla JS, no build step. Every action re-fetches the run
 // from the server rather than tracking client-side state, so the UI can never
 // drift from what the pipeline actually did.
 //

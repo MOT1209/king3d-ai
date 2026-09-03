@@ -161,7 +161,7 @@ describe("review request", () => {
 
 describe("agent-in-loop provider", () => {
   async function provider() {
-    const dir = await mkdtemp(join(tmpdir(), "ai3d-prompts-"));
+    const dir = await mkdtemp(join(tmpdir(), "king3d-prompts-"));
     return { dir, provider: new AgentInLoopProvider({ promptDir: dir }) };
   }
 

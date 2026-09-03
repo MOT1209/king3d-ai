@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * ai3d command line.
+ * king3d command line.
  *
  * Machine-readable output goes to stdout; progress and diagnostics go to stderr,
- * so `ai3d scene --json | jq` works without filtering log noise.
+ * so `king3d scene --json | jq` works without filtering log noise.
  */
 import { parseArgs } from "node:util";
 import { loadConfig, paths } from "../core/config.ts";
@@ -12,9 +12,9 @@ import { setLogLevel, type LogLevel } from "../core/logger.ts";
 import { runDoctor, formatDoctorReport } from "./doctor.ts";
 import { acquireBackend, Batch, daemonStatus, startDaemon, stopDaemon } from "../integrations/blender/index.ts";
 
-const USAGE = `ai3d - AI 3D engineering agent
+const USAGE = `king3d - AI 3D engineering agent
 
-Usage: ai3d <command> [options]
+Usage: king3d <command> [options]
 
 Commands:
   doctor                 Check the environment (Blender, Python, daemon, ports)
@@ -194,7 +194,7 @@ async function main(argv: string[]): Promise<number> {
       const { runReview } = await import("./review.ts");
       const runId = positionals[1];
       if (!runId) {
-        process.stderr.write("review needs a run id: ai3d review <run-id>\n");
+        process.stderr.write("review needs a run id: king3d review <run-id>\n");
         return 1;
       }
       return runReview({
@@ -209,7 +209,7 @@ async function main(argv: string[]): Promise<number> {
       const { runViewer } = await import("./viewer.ts");
       const runId = positionals[1];
       if (!runId) {
-        process.stderr.write("viewer needs a run id: ai3d viewer <run-id>\n");
+        process.stderr.write("viewer needs a run id: king3d viewer <run-id>\n");
         return 1;
       }
       return runViewer({
@@ -247,7 +247,7 @@ main(process.argv.slice(2))
       if (e.code === "BLENDER_NOT_FOUND") {
         process.stderr.write(
           `\nLooked for blender.exe under Program Files and on PATH. ` +
-            `Set AI3D_BLENDER_PATH if it lives elsewhere.\n`,
+            `Set KING3D_BLENDER_PATH if it lives elsewhere.\n`,
         );
       }
     } else {

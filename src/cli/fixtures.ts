@@ -1,5 +1,5 @@
 /**
- * `ai3d fixtures:build` - render the reference image the vertical slice is tested against.
+ * `king3d fixtures:build` - render the reference image the vertical slice is tested against.
  *
  * Testing image-to-3D needs a reference, and any real photograph makes the test
  * depend on an asset we do not control and cannot check an answer against. So the
@@ -79,7 +79,7 @@ export async function runFixtures(options: FixturesOptions = {}): Promise<number
     process.stdout.write(`\nreference written: ${still.output}\n`);
     process.stdout.write(`  ${still.width}x${still.height}, ${still.engine}\n\n`);
     process.stdout.write(`Now run the vertical slice against it:\n`);
-    process.stdout.write(`  ai3d gen --image tests/fixtures/mug_reference.png --run-id slice\n`);
+    process.stdout.write(`  king3d gen --image tests/fixtures/mug_reference.png --run-id slice\n`);
     return 0;
   } finally {
     await backend.close();

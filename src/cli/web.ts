@@ -1,5 +1,5 @@
 /**
- * `ai3d web [--port]` - start the dashboard.
+ * `king3d web [--port]` - start the dashboard.
  */
 import { startServer } from "../server/http.ts";
 
@@ -18,7 +18,7 @@ export async function runWeb(options: WebCommandOptions = {}): Promise<number> {
     server.once("error", reject);
   });
 
-  process.stdout.write(`\nai3d dashboard: http://${host}:${port}\n`);
+  process.stdout.write(`\nking3d dashboard: http://${host}:${port}\n`);
   process.stderr.write("press Ctrl+C to stop\n");
 
   await new Promise<void>((resolve) => {

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ai3d viewer</title>
+    <title>king3d viewer</title>
     <style>
       :root {
         color-scheme: dark;
@@ -70,7 +70,7 @@
       <div id="status">loading model&hellip;</div>
     </div>
     <aside>
-      <h1 id="title">ai3d viewer</h1>
+      <h1 id="title">king3d viewer</h1>
       <div class="muted" id="subtitle">&mdash;</div>
 
       <h2>Model</h2>
@@ -100,14 +100,14 @@
         }
       }
     </script>
-    <!-- AI3D_MANIFEST: the server injects window.__AI3D__ right before this tag. -->
+    <!-- KING3D_MANIFEST: the server injects window.__KING3D__ right before this tag. -->
     <script type="module">
       import * as THREE from "three";
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
       // The server injects a manifest describing which run is being viewed.
-      const manifest = window.__AI3D__ || { glb: "model.glb" };
+      const manifest = window.__KING3D__ || { glb: "model.glb" };
 
       const stage = document.getElementById("stage");
       const status = document.getElementById("status");

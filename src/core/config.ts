@@ -56,14 +56,14 @@ function compareVersionDesc(a: string, b: string): number {
 
 /**
  * Locate the Blender executable.
- * Order: AI3D_BLENDER_PATH -> platform install roots (newest version) -> PATH.
+ * Order: KING3D_BLENDER_PATH -> platform install roots (newest version) -> PATH.
  * Returns null instead of throwing so `doctor` can report a clean diagnosis.
  */
 export function findBlenderExecutable(): string | null {
-  const override = process.env["AI3D_BLENDER_PATH"];
+  const override = process.env["KING3D_BLENDER_PATH"];
   if (override && existsSync(override)) return override;
   if (override) {
-    throw new Ai3dError("BLENDER_NOT_FOUND", `AI3D_BLENDER_PATH is set but does not exist: ${override}`, {
+    throw new Ai3dError("BLENDER_NOT_FOUND", `KING3D_BLENDER_PATH is set but does not exist: ${override}`, {
       path: override,
     });
   }
@@ -107,7 +107,7 @@ export function requireBlenderExecutable(): string {
   if (!exe) {
     throw new Ai3dError(
       "BLENDER_NOT_FOUND",
-      "Blender executable not found. Set AI3D_BLENDER_PATH to blender.exe (or blender).",
+      "Blender executable not found. Set KING3D_BLENDER_PATH to blender.exe (or blender).",
     );
   }
   return exe;
@@ -138,19 +138,19 @@ export interface Ai3dConfig {
 }
 
 export function loadConfig(overrides: Partial<Ai3dConfig> = {}): Ai3dConfig {
-  const backendRaw = (process.env["AI3D_BACKEND"] ?? "daemon").toLowerCase();
+  const backendRaw = (process.env["KING3D_BACKEND"] ?? "daemon").toLowerCase();
   // "socket" is accepted as a synonym for "daemon": same transport either way.
   const backend: BackendKind = backendRaw === "socket" ? "daemon" : (backendRaw as BackendKind);
   if (backend !== "daemon" && backend !== "headless") {
-    throw new Ai3dError("CONFIG_INVALID", `AI3D_BACKEND must be "daemon" or "headless", got "${backendRaw}"`);
+    throw new Ai3dError("CONFIG_INVALID", `KING3D_BACKEND must be "daemon" or "headless", got "${backendRaw}"`);
   }
   return {
     backend,
-    bridgeHost: process.env["AI3D_BRIDGE_HOST"] ?? "127.0.0.1",
+    bridgeHost: process.env["KING3D_BRIDGE_HOST"] ?? "127.0.0.1",
     // 9876 belongs to the third-party blender-mcp addon; we deliberately sit beside it.
-    bridgePort: envInt("AI3D_BRIDGE_PORT", 9877),
-    allowPythonExec: process.env["AI3D_ALLOW_PYTHON_EXEC"] === "1",
-    blenderTimeoutMs: envInt("AI3D_BLENDER_TIMEOUT_MS", 300_000),
+    bridgePort: envInt("KING3D_BRIDGE_PORT", 9877),
+    allowPythonExec: process.env["KING3D_ALLOW_PYTHON_EXEC"] === "1",
+    blenderTimeoutMs: envInt("KING3D_BLENDER_TIMEOUT_MS", 300_000),
     ...overrides,
   };
 }

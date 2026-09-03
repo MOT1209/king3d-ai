@@ -48,14 +48,14 @@ describe("tool discovery", () => {
     const names = tools.map((t) => t.name).sort();
     expect(names).toEqual(
       [
-        "ai3d_build",
-        "ai3d_create_run",
-        "ai3d_doctor",
-        "ai3d_get_run",
-        "ai3d_list_runs",
-        "ai3d_request_review",
-        "ai3d_submit_review_answer",
-        "ai3d_submit_spec_answer",
+        "king3d_build",
+        "king3d_create_run",
+        "king3d_doctor",
+        "king3d_get_run",
+        "king3d_list_runs",
+        "king3d_request_review",
+        "king3d_submit_review_answer",
+        "king3d_submit_spec_answer",
       ].sort(),
     );
 
@@ -76,25 +76,25 @@ describe("tool discovery", () => {
   it("marks read-only tools correctly", async () => {
     const { tools } = await client.listTools();
     const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
-    expect(byName["ai3d_doctor"]?.annotations?.readOnlyHint).toBe(true);
-    expect(byName["ai3d_list_runs"]?.annotations?.readOnlyHint).toBe(true);
-    expect(byName["ai3d_get_run"]?.annotations?.readOnlyHint).toBe(true);
-    expect(byName["ai3d_create_run"]?.annotations?.readOnlyHint).toBe(false);
-    expect(byName["ai3d_build"]?.annotations?.readOnlyHint).toBe(false);
+    expect(byName["king3d_doctor"]?.annotations?.readOnlyHint).toBe(true);
+    expect(byName["king3d_list_runs"]?.annotations?.readOnlyHint).toBe(true);
+    expect(byName["king3d_get_run"]?.annotations?.readOnlyHint).toBe(true);
+    expect(byName["king3d_create_run"]?.annotations?.readOnlyHint).toBe(false);
+    expect(byName["king3d_build"]?.annotations?.readOnlyHint).toBe(false);
   });
 });
 
-describe("ai3d_doctor", () => {
+describe("king3d_doctor", () => {
   it("runs environment checks and returns structured content", async () => {
-    const result = await call("ai3d_doctor");
+    const result = await call("king3d_doctor");
     expect(result.isError).toBe(false);
-    expect(result.text).toContain("ai3d doctor");
+    expect(result.text).toContain("king3d doctor");
   });
 });
 
-describe("ai3d_list_runs", () => {
+describe("king3d_list_runs", () => {
   it("returns a paginated shape", async () => {
-    const result = await call("ai3d_list_runs", { limit: 2 });
+    const result = await call("king3d_list_runs", { limit: 2 });
     expect(result.isError).toBe(false);
     const body = result.json as { total: number; count: number; runs: unknown[] };
     expect(body.count).toBeLessThanOrEqual(2);
@@ -102,34 +102,34 @@ describe("ai3d_list_runs", () => {
   });
 
   it("rejects a limit above the schema maximum rather than silently clamping", async () => {
-    const result = await call("ai3d_list_runs", { limit: 99999 });
+    const result = await call("king3d_list_runs", { limit: 99999 });
     expect(result.isError).toBe(true);
   });
 });
 
-describe("ai3d_get_run", () => {
+describe("king3d_get_run", () => {
   it("returns a not-found error for an unknown run", async () => {
-    const result = await call("ai3d_get_run", { run_id: "no_such_run_xyz" });
+    const result = await call("king3d_get_run", { run_id: "no_such_run_xyz" });
     expect(result.isError).toBe(true);
     expect(result.text).toContain("RUN_NOT_FOUND");
   });
 });
 
-describe("ai3d_create_run", () => {
+describe("king3d_create_run", () => {
   it("rejects a run with neither an image nor a prompt", async () => {
-    const result = await call("ai3d_create_run", {});
+    const result = await call("king3d_create_run", {});
     expect(result.isError).toBe(true);
     expect(result.text).toMatch(/image_path or prompt/);
   });
 
   it("errors clearly when image_path does not exist", async () => {
-    const result = await call("ai3d_create_run", { image_path: "no/such/file.png" });
+    const result = await call("king3d_create_run", { image_path: "no/such/file.png" });
     expect(result.isError).toBe(true);
     expect(result.text).toMatch(/could not read image/);
   });
 
   it("creates a run from a prompt and returns the pending spec request", async () => {
-    const result = await call("ai3d_create_run", { prompt: "a small tin cup, MCP test" });
+    const result = await call("king3d_create_run", { prompt: "a small tin cup, MCP test" });
     expect(result.isError).toBe(false);
     const body = result.json as { runId: string; status: string; request: string };
     createdRunIds.push(body.runId);
@@ -165,11 +165,11 @@ describe("spec answer round trip", () => {
   };
 
   it("accepts a spec given as a JSON object", async () => {
-    const created = await call("ai3d_create_run", { prompt: "object-form test" });
+    const created = await call("king3d_create_run", { prompt: "object-form test" });
     const runId = (created.json as { runId: string }).runId;
     createdRunIds.push(runId);
 
-    const answered = await call("ai3d_submit_spec_answer", { run_id: runId, spec: draft });
+    const answered = await call("king3d_submit_spec_answer", { run_id: runId, spec: draft });
     expect(answered.isError, answered.text).toBe(false);
     const body = answered.json as { status: string; spec: { id: string } };
     expect(body.status).toBe("spec_ready");
@@ -177,20 +177,20 @@ describe("spec answer round trip", () => {
   });
 
   it("accepts a spec given as a JSON string", async () => {
-    const created = await call("ai3d_create_run", { prompt: "string-form test" });
+    const created = await call("king3d_create_run", { prompt: "string-form test" });
     const runId = (created.json as { runId: string }).runId;
     createdRunIds.push(runId);
 
-    const answered = await call("ai3d_submit_spec_answer", { run_id: runId, spec: JSON.stringify(draft) });
+    const answered = await call("king3d_submit_spec_answer", { run_id: runId, spec: JSON.stringify(draft) });
     expect(answered.isError).toBe(false);
   });
 
   it("tolerates a spec wrapped in a markdown code fence", async () => {
-    const created = await call("ai3d_create_run", { prompt: "fenced-form test" });
+    const created = await call("king3d_create_run", { prompt: "fenced-form test" });
     const runId = (created.json as { runId: string }).runId;
     createdRunIds.push(runId);
 
-    const answered = await call("ai3d_submit_spec_answer", {
+    const answered = await call("king3d_submit_spec_answer", {
       run_id: runId,
       spec: "```json\n" + JSON.stringify(draft) + "\n```",
     });
@@ -198,33 +198,33 @@ describe("spec answer round trip", () => {
   });
 
   it("rejects a spec that is not valid JSON, with a specific error", async () => {
-    const created = await call("ai3d_create_run", { prompt: "invalid-form test" });
+    const created = await call("king3d_create_run", { prompt: "invalid-form test" });
     const runId = (created.json as { runId: string }).runId;
     createdRunIds.push(runId);
 
-    const answered = await call("ai3d_submit_spec_answer", { run_id: runId, spec: "this is not json" });
+    const answered = await call("king3d_submit_spec_answer", { run_id: runId, spec: "this is not json" });
     expect(answered.isError).toBe(true);
     expect(answered.text).toContain("TOOL_OUTPUT_INVALID");
   });
 
   it("rejects a review request before the run has been built", async () => {
-    const created = await call("ai3d_create_run", { prompt: "unbuild test" });
+    const created = await call("king3d_create_run", { prompt: "unbuild test" });
     const runId = (created.json as { runId: string }).runId;
     createdRunIds.push(runId);
-    await call("ai3d_submit_spec_answer", { run_id: runId, spec: draft });
+    await call("king3d_submit_spec_answer", { run_id: runId, spec: draft });
 
-    const review = await call("ai3d_request_review", { run_id: runId });
+    const review = await call("king3d_request_review", { run_id: runId });
     expect(review.isError).toBe(true);
     expect(review.text).toContain("RUN_STATE_INVALID");
   });
 
   it("get_run reflects the accepted spec and clears the pending request", async () => {
-    const created = await call("ai3d_create_run", { prompt: "reflect test" });
+    const created = await call("king3d_create_run", { prompt: "reflect test" });
     const runId = (created.json as { runId: string }).runId;
     createdRunIds.push(runId);
-    await call("ai3d_submit_spec_answer", { run_id: runId, spec: draft });
+    await call("king3d_submit_spec_answer", { run_id: runId, spec: draft });
 
-    const detail = await call("ai3d_get_run", { run_id: runId });
+    const detail = await call("king3d_get_run", { run_id: runId });
     const body = detail.json as { spec: { object: { name: string } }; pending: Record<string, string> };
     expect(body.spec.object.name).toBe("mcp test cup");
     expect(body.pending["spec"]).toBeUndefined();

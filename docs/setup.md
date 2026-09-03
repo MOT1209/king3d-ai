@@ -6,7 +6,7 @@
   stripping, so there is no build step.
 * **Blender 4.2+** (developed against 5.2.0 LTS). Found automatically under
   `C:/Program Files/Blender Foundation`, the usual macOS/Linux paths, or `PATH`.
-  Override with `AI3D_BLENDER_PATH`.
+  Override with `KING3D_BLENDER_PATH`.
 
 Nothing is installed into Blender's Python: the Blender-side code is standard
 library plus `bpy` and the numpy that Blender already bundles.
@@ -47,10 +47,10 @@ See `.env.example`. All settings are environment variables; none are required.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `AI3D_BLENDER_PATH` | auto-detected | Blender executable |
-| `AI3D_BACKEND` | `daemon` | `daemon` (persistent) or `headless` (one-shot) |
-| `AI3D_BRIDGE_PORT` | `9877` | Daemon port (9876 belongs to third-party blender-mcp) |
-| `AI3D_ALLOW_PYTHON_EXEC` | unset | Set to `1` to enable the arbitrary-Python escape hatch |
-| `AI3D_LOG_LEVEL` | `info` | `debug` shows the bridge traffic |
+| `KING3D_BLENDER_PATH` | auto-detected | Blender executable |
+| `KING3D_BACKEND` | `daemon` | `daemon` (persistent) or `headless` (one-shot) |
+| `KING3D_BRIDGE_PORT` | `9877` | Daemon port (9876 belongs to third-party blender-mcp) |
+| `KING3D_ALLOW_PYTHON_EXEC` | unset | Set to `1` to enable the arbitrary-Python escape hatch |
+| `KING3D_LOG_LEVEL` | `info` | `debug` shows the bridge traffic |
 
 No AI API keys are needed: visual judgement is done by the agent in the loop.

@@ -1,6 +1,6 @@
 <div align="center">
 
-# ai3d
+# King3D.AI
 
 **Reference image or prompt in — verified, game-ready 3D asset out.**
 
@@ -32,11 +32,11 @@ The pipeline runs end to end: reference image in, verified GLB out.
 |---|---|---|
 | **Blender bridge** — 24 typed commands, two transports, one shared Python implementation | — | [`docs/blender-bridge.md`](docs/blender-bridge.md) |
 | **SceneSpec** — the source of truth, every field marked `observed` or `inferred` | — | [`docs/pipeline.md`](docs/pipeline.md) |
-| **Analysis** — reference image → spec draft | `ai3d gen --image` | |
-| **Deterministic build** — geometry, lighting, renders, 11 quality gates, GLB export verified by re-import | `ai3d build` | |
-| **Review and repair** — similarity score plus defects, each optionally carrying a fix applied back to the spec | `ai3d review --rebuild` | |
-| **Viewer** — the exported GLB in a browser | `ai3d viewer` | |
-| **Dashboard** — a browser control panel over the whole loop: upload, spec, build (streamed live), report, model, review, repair, rebuild | `ai3d web` | [`docs/dashboard.md`](docs/dashboard.md) |
+| **Analysis** — reference image → spec draft | `king3d gen --image` | |
+| **Deterministic build** — geometry, lighting, renders, 11 quality gates, GLB export verified by re-import | `king3d build` | |
+| **Review and repair** — similarity score plus defects, each optionally carrying a fix applied back to the spec | `king3d review --rebuild` | |
+| **Viewer** — the exported GLB in a browser | `king3d viewer` | |
+| **Dashboard** — a browser control panel over the whole loop: upload, spec, build (streamed live), report, model, review, repair, rebuild | `king3d web` | [`docs/dashboard.md`](docs/dashboard.md) |
 | **MCP server** — the same pipeline as MCP tools, so any MCP-compatible coding agent (Claude Code, Claude Desktop, Cursor, Windsurf, …) can drive it directly | `node src/mcp/index.ts` | [`docs/mcp-server.md`](docs/mcp-server.md) |
 
 **118 tests pass** — 97 under vitest, 21 inside Blender, including the code paths the dashboard and the MCP server both reuse from the CLI's own pipeline functions.
@@ -114,7 +114,7 @@ node src/cli/index.ts viewer slice
 Any MCP-compatible coding agent drives it directly, tool by tool.
 
 ```bash
-claude mcp add ai3d -- \
+claude mcp add king3d -- \
   node src/mcp/index.ts
 ```
 [`docs/mcp-server.md`](docs/mcp-server.md)
@@ -155,7 +155,7 @@ src/pipeline/             builder, gates, review, run orchestration
 src/providers/            model providers (agent-in-the-loop by default)
 src/server/               dashboard: pure JSON routes + the node:http adapter
 src/mcp/                  MCP server: same routes, exposed as tools over stdio
-src/cli/                  the ai3d command
+src/cli/                  the king3d command
 web/                      dashboard frontend (vanilla HTML/JS, no build step)
 blender/ai3dlib/          the Blender-side Python
 blender/tests/            unit tests that run inside Blender

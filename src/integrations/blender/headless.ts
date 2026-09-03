@@ -35,7 +35,7 @@ export class HeadlessBackend implements BlenderBackend {
   constructor(options: HeadlessOptions = {}, config: Ai3dConfig = loadConfig()) {
     this.#blenderPath = options.blenderPath ?? requireBlenderExecutable();
     this.#timeoutMs = options.timeoutMs ?? config.blenderTimeoutMs;
-    this.#keepJobFiles = options.keepJobFiles ?? process.env["AI3D_KEEP_JOBS"] === "1";
+    this.#keepJobFiles = options.keepJobFiles ?? process.env["KING3D_KEEP_JOBS"] === "1";
     this.#allowPythonExec = options.allowPythonExec ?? config.allowPythonExec;
   }
 
@@ -47,7 +47,7 @@ export class HeadlessBackend implements BlenderBackend {
     if (requests.length === 0) return { responses: [], ok: true };
 
     const startedAt = Date.now();
-    const workDir = await mkdtemp(join(tmpdir(), "ai3d-job-"));
+    const workDir = await mkdtemp(join(tmpdir(), "king3d-job-"));
     const jobPath = join(workDir, "job.json");
     const resultPath = join(workDir, "result.json");
 

@@ -48,7 +48,7 @@ daemon gives the same warm-process economics with no GUI and no user action.
 
 With free RAM under ~500 MB, Windows trims the idle daemon's working set (it was
 observed at 5 MB). The next batch has to fault the process back in, which costs
-12 000 - 45 000 ms once, after which batches return to milliseconds. `ai3d doctor`
+12 000 - 45 000 ms once, after which batches return to milliseconds. `king3d doctor`
 reports this as a memory warning. It is a machine limit, not a bug.
 
 ## Protocol
@@ -94,7 +94,7 @@ batches through `save_blend` / `load_blend`.
 
 ## Render engines
 
-Availability and speed differ enormously; `ai3d bench` measures the current
+Availability and speed differ enormously; `king3d bench` measures the current
 machine. On the development machine, rendering a 384px frame:
 
 | Engine | Cold (first render in a process) | Warm |
@@ -112,12 +112,12 @@ is paid once per repair cycle rather than per stage.
 ## Ports
 
 `9877`. The third-party `blender-mcp` addon owns `9876`; we sit beside it
-deliberately so both can be installed at once. `ai3d doctor` reports whether 9876
+deliberately so both can be installed at once. `king3d doctor` reports whether 9876
 is live, because a running blender-mcp explains a lot of otherwise confusing
 behaviour.
 
 ## python.exec
 
-Disabled unless `AI3D_ALLOW_PYTHON_EXEC=1`. `blender-mcp` makes arbitrary code its
+Disabled unless `KING3D_ALLOW_PYTHON_EXEC=1`. `blender-mcp` makes arbitrary code its
 primary interface, which means no validation, no typed results, and no way to tell
 what a call will do. Here it is a debugging escape hatch only.

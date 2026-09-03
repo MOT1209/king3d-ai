@@ -140,23 +140,23 @@ runs/<id>/
 ## Running it
 
 ```bash
-ai3d gen --image ref.png --run-id chair   # asks for a spec, then stops
+king3d gen --image ref.png --run-id chair   # asks for a spec, then stops
 #   read runs/chair/prompts/spec.request.md, look at the image,
 #   write runs/chair/prompts/spec.response.json
-ai3d gen --run-id chair                   # builds, gates, exports
-ai3d review chair                         # asks for a judgement, then stops
+king3d gen --run-id chair                   # builds, gates, exports
+king3d review chair                         # asks for a judgement, then stops
 #   read the request, look at runs/chair/contact_sheet.png, write the response
-ai3d review chair --rebuild               # applies fixes and rebuilds
-ai3d viewer chair                         # turn the GLB over in a browser
+king3d review chair --rebuild               # applies fixes and rebuilds
+king3d viewer chair                         # turn the GLB over in a browser
 ```
 
-`ai3d build --spec x.json` skips the analysis stage when a spec already exists.
+`king3d build --spec x.json` skips the analysis stage when a spec already exists.
 
 ## The synthetic reference
 
 Testing image-to-3D needs a reference image, and a photograph makes the test
 depend on an asset nobody controls and whose correct answer nobody knows. So
-`ai3d fixtures:build` renders one from a spec we already have:
+`king3d fixtures:build` renders one from a spec we already have:
 
 ```
 src/spec/fixtures/mug.json  --Cycles-->  tests/fixtures/mug_reference.png

@@ -51,7 +51,7 @@ export async function runDoctor(): Promise<DoctorReport> {
     checks.push({
       name: "blender path",
       status: "fail",
-      detail: "not found under Program Files or on PATH; set AI3D_BLENDER_PATH",
+      detail: "not found under Program Files or on PATH; set KING3D_BLENDER_PATH",
     });
   }
 
@@ -73,7 +73,7 @@ export async function runDoctor(): Promise<DoctorReport> {
     status: status.running ? "ok" : "warn",
     detail: status.running
       ? `running on ${status.state?.host}:${status.state?.port} (pid ${status.state?.pid})`
-      : `not running; "ai3d daemon start" will start one on ${config.bridgeHost}:${config.bridgePort}`,
+      : `not running; "king3d daemon start" will start one on ${config.bridgeHost}:${config.bridgePort}`,
   });
 
   // 9876 is the third-party blender-mcp addon's port. We deliberately avoid it,
@@ -82,7 +82,7 @@ export async function runDoctor(): Promise<DoctorReport> {
   checks.push({
     name: "port 9876 (third-party blender-mcp)",
     status: "ok",
-    detail: mcpPortBusy ? "in use - unrelated to ai3d, which uses 9877" : "free",
+    detail: mcpPortBusy ? "in use - unrelated to king3d, which uses 9877" : "free",
   });
 
   if (blenderPath && !status.running) {
@@ -101,7 +101,7 @@ export async function runDoctor(): Promise<DoctorReport> {
         checks.push({
           name: "startup cost",
           status: "warn",
-          detail: `${(startupMs / 1000).toFixed(1)}s per cold start - keep the daemon running rather than using AI3D_BACKEND=headless`,
+          detail: `${(startupMs / 1000).toFixed(1)}s per cold start - keep the daemon running rather than using KING3D_BACKEND=headless`,
         });
       }
     } catch (e) {
@@ -151,7 +151,7 @@ export function formatDoctorReport(report: DoctorReport): string {
   const failed = report.checks.filter((c) => c.status === "fail").length;
   const warned = report.checks.filter((c) => c.status === "warn").length;
   return (
-    `ai3d doctor\n${lines.join("\n")}\n\n` +
+    `king3d doctor\n${lines.join("\n")}\n\n` +
     (report.ok ? `environment usable (${warned} warning${warned === 1 ? "" : "s"})\n` : `${failed} check(s) failed\n`)
   );
 }

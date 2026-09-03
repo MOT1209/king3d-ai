@@ -1,5 +1,5 @@
 /**
- * `ai3d review` - the judgement half of the loop.
+ * `king3d review` - the judgement half of the loop.
  *
  * Called once to emit a request, and again to consume the answer. That split is
  * what makes the pipeline resumable instead of blocking, and it keeps the model
@@ -83,7 +83,7 @@ export async function runReview(options: ReviewCommandOptions): Promise<number> 
           `  read   ${e.requestPath}\n` +
           `  look   ${rp.sheet}\n` +
           `  write  ${e.responsePath}\n\n` +
-          `Then run:  ai3d review ${options.runId}\n`,
+          `Then run:  king3d review ${options.runId}\n`,
       );
       return 2;
     }

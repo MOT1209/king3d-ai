@@ -3,7 +3,7 @@
  *
  * Default is the daemon: Blender costs 30-90s to start and milliseconds to
  * command, so the pipeline keeps one alive rather than paying startup per batch.
- * `AI3D_BACKEND=headless` forces the one-shot path for CI or debugging.
+ * `KING3D_BACKEND=headless` forces the one-shot path for CI or debugging.
  */
 import { loadConfig, type Ai3dConfig } from "../../core/config.ts";
 import { createLogger } from "../../core/logger.ts";

@@ -1,5 +1,5 @@
 /**
- * `ai3d viewer <run-id>` - serve the exported GLB in a browser.
+ * `king3d viewer <run-id>` - serve the exported GLB in a browser.
  *
  * A GLB that passes every gate can still be wrong in a way only looking at it
  * reveals, and the contact sheet shows four fixed angles. This serves the actual
@@ -45,8 +45,8 @@ export async function runViewer(options: ViewerOptions): Promise<number> {
   };
 
   const page = (await readFile(join(paths.viewer, "index.html"), "utf8")).replace(
-    "<!-- AI3D_MANIFEST: the server injects window.__AI3D__ right before this tag. -->",
-    `<script>window.__AI3D__ = ${JSON.stringify(manifest)};</script>`,
+    "<!-- KING3D_MANIFEST: the server injects window.__KING3D__ right before this tag. -->",
+    `<script>window.__KING3D__ = ${JSON.stringify(manifest)};</script>`,
   );
 
   const port = options.port ?? 5173;

@@ -1,5 +1,5 @@
 {
-  "name": "ai3d",
+  "name": "king3d",
   "version": "0.1.0",
   "private": true,
   "description": "AI 3D Engineering Agent — image/text to game-ready 3D assets via Blender",
@@ -8,11 +8,11 @@
     "node": ">=24"
   },
   "bin": {
-    "ai3d": "./src/cli/index.ts",
-    "ai3d-mcp-server": "./src/mcp/index.ts"
+    "king3d": "./src/cli/index.ts",
+    "king3d-mcp-server": "./src/mcp/index.ts"
   },
   "scripts": {
-    "ai3d": "node src/cli/index.ts",
+    "king3d": "node src/cli/index.ts",
     "doctor": "node src/cli/index.ts doctor",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

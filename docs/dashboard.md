@@ -1,6 +1,6 @@
 # Dashboard
 
-`ai3d web` starts a browser control panel over the same pipeline the CLI
+`king3d web` starts a browser control panel over the same pipeline the CLI
 drives - create a run, paste the spec/review judgements, watch the build
 stream live, inspect the report, turn the model over, repair and rebuild.
 
@@ -13,7 +13,7 @@ node src/cli/index.ts web --port 5180
 `src/server/routes.ts` calls the exact library functions the CLI calls -
 `buildSpecRequest`, `buildReviewRequest`, `AgentInLoopProvider.ask`,
 `applyRepairs`, `withSimilarity`, `completeDraft`, `buildFromSpec` - so a run
-built from the dashboard and a run built from `ai3d gen` are indistinguishable
+built from the dashboard and a run built from `king3d gen` are indistinguishable
 on disk. `gen.ts`, `review.ts` and `build.ts` are untouched; the dashboard is a
 second, JSON-shaped way to drive the same pipeline, not a reimplementation of
 it.
@@ -31,7 +31,7 @@ src/server/
   http.ts        the node:http adapter: JSON dispatch, SSE for build/rebuild,
                  static assets, and each run's own files behind a
                  traversal-safe prefix check
-src/cli/web.ts   `ai3d web [--port]`
+src/cli/web.ts   `king3d web [--port]`
 web/             index.html + app.js + style.css, no build step, same
                  vanilla-three.js approach as viewer/index.html
 ```

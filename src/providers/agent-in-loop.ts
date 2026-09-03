@@ -7,7 +7,7 @@
  * secret to leak, and the same files make a run reproducible and auditable.
  *
  * Runs are therefore resumable rather than blocking: a stage that needs a
- * judgement writes its request and stops, and `ai3d resume` continues once the
+ * judgement writes its request and stops, and `king3d resume` continues once the
  * answer file exists.
  */
 import { mkdir, readFile, writeFile } from "node:fs/promises";

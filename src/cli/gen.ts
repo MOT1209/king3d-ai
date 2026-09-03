@@ -1,14 +1,14 @@
 /**
- * `ai3d gen` - the whole pipeline, from a reference image or a prompt.
+ * `king3d gen` - the whole pipeline, from a reference image or a prompt.
  *
  * Runs until it needs a judgement, then stops and says what it needs. Re-running
  * the same command resumes, so the loop is:
  *
- *     ai3d gen --image ref.png --run-id chair
+ *     king3d gen --image ref.png --run-id chair
  *     (answer the spec request)
- *     ai3d gen --run-id chair          -> builds, then asks for a review
+ *     king3d gen --run-id chair          -> builds, then asks for a review
  *     (answer the review request)
- *     ai3d review chair --rebuild
+ *     king3d review chair --rebuild
  */
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
@@ -83,7 +83,7 @@ export async function runGen(options: GenCommandOptions): Promise<number> {
     process.stdout.write(formatGateReport(result.report));
     process.stdout.write(`\n  contact sheet  ${result.paths.sheet}\n`);
     if (result.exported) process.stdout.write(`  glb            ${result.paths.glb}\n`);
-    process.stdout.write(`\nNext: ai3d review ${runId}\n`);
+    process.stdout.write(`\nNext: king3d review ${runId}\n`);
   }
   return result.report.passed ? 0 : 1;
 }
@@ -124,7 +124,7 @@ async function obtainSpec(
           (reference ? `  look   ${reference}\n` : "") +
           `  read   ${e.requestPath}\n` +
           `  write  ${e.responsePath}\n\n` +
-          `Then run:  ai3d gen --run-id ${runId}\n`,
+          `Then run:  king3d gen --run-id ${runId}\n`,
       );
       return null;
     }

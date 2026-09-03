@@ -10,7 +10,7 @@ const COLORS: Record<LogLevel, string> = {
 };
 const RESET = "\x1b[0m";
 
-let threshold: LogLevel = (process.env["AI3D_LOG_LEVEL"] as LogLevel | undefined) ?? "info";
+let threshold: LogLevel = (process.env["KING3D_LOG_LEVEL"] as LogLevel | undefined) ?? "info";
 const useColor = process.stderr.isTTY === true && process.env["NO_COLOR"] === undefined;
 
 export function setLogLevel(level: LogLevel): void {

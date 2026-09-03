@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * ai3d-mcp-server - exposes the ai3d pipeline as MCP tools.
+ * king3d-mcp-server - exposes the king3d pipeline as MCP tools.
  *
  * Every tool here calls the exact same functions the CLI (src/cli/*.ts) and
  * the web dashboard (src/server/routes.ts) already call - buildFromSpec,
  * apiCreateRun, apiSpecAnswer, apiRequestReview, apiReviewAnswer, runDoctor -
- * so a run created from a coding agent, the dashboard, or `ai3d gen` are
+ * so a run created from a coding agent, the dashboard, or `king3d gen` are
  * indistinguishable on disk. No pipeline logic is duplicated here; this file
  * is only the MCP transport and tool-schema layer on top of it.
  *
@@ -95,17 +95,17 @@ async function resolveImageBase64(imagePath: string): Promise<{ base64: string; 
 // --------------------------------------------------------------------- server
 
 const server = new McpServer({
-  name: "ai3d-mcp-server",
+  name: "king3d-mcp-server",
   version: "0.1.0",
 });
 
-// ---- ai3d_doctor -----------------------------------------------------------
+// ---- king3d_doctor -----------------------------------------------------------
 
 server.registerTool(
-  "ai3d_doctor",
+  "king3d_doctor",
   {
-    title: "Check ai3d Environment",
-    description: `Check whether the ai3d pipeline can actually run on this machine right now.
+    title: "Check king3d Environment",
+    description: `Check whether the king3d pipeline can actually run on this machine right now.
 
 Verifies the Blender executable is found, the Blender-side bridge files exist, whether the
 persistent Blender daemon is running (and starts a one-off cold-start timing check if not -
@@ -132,7 +132,7 @@ Returns: a list of checks, each either "ok", "warn", or "fail", plus an overall 
   },
 );
 
-// ---- ai3d_list_runs ---------------------------------------------------------
+// ---- king3d_list_runs ---------------------------------------------------------
 
 const ListRunsInputSchema = z
   .object({
@@ -146,9 +146,9 @@ const ListRunsInputSchema = z
   .strict();
 
 server.registerTool(
-  "ai3d_list_runs",
+  "king3d_list_runs",
   {
-    title: "List ai3d Runs",
+    title: "List king3d Runs",
     description: `List generation runs, newest first, with their current status and scores.
 
 Status values: "needs_spec" (waiting on a spec answer), "spec_ready" (spec accepted, not yet
@@ -187,24 +187,24 @@ hasReference, createdAt }], has_more, next_offset }`,
   },
 );
 
-// ---- ai3d_get_run -----------------------------------------------------------
+// ---- king3d_get_run -----------------------------------------------------------
 
 const GetRunInputSchema = z
   .object({
-    run_id: z.string().min(1).describe("The run id, e.g. as returned by ai3d_create_run or ai3d_list_runs."),
+    run_id: z.string().min(1).describe("The run id, e.g. as returned by king3d_create_run or king3d_list_runs."),
   })
   .strict();
 
 server.registerTool(
-  "ai3d_get_run",
+  "king3d_get_run",
   {
-    title: "Get ai3d Run Detail",
+    title: "Get king3d Run Detail",
     description: `Get full detail for one run: its status, the accepted spec (if any), the repaired
 spec (if a review proposed applicable fixes), the gate report and scores (if built), and the
 full text of any pending judgement request (a spec or review question waiting for an answer).
 
 Use this to check what a run needs next: if pending.spec or pending.review is present in the
-response, answer it with ai3d_submit_spec_answer or ai3d_submit_review_answer respectively.
+response, answer it with king3d_submit_spec_answer or king3d_submit_review_answer respectively.
 
 Args:
   - run_id (string): the run to inspect
@@ -212,7 +212,7 @@ Args:
 Returns JSON: { summary, spec, repairedSpec, report, pending: { spec?, review? }, reference }
 
 Error Handling:
-  - Returns an error if no run exists with that id (use ai3d_list_runs to find valid ids)`,
+  - Returns an error if no run exists with that id (use king3d_list_runs to find valid ids)`,
     inputSchema: GetRunInputSchema.shape,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -225,7 +225,7 @@ Error Handling:
   },
 );
 
-// ---- ai3d_create_run --------------------------------------------------------
+// ---- king3d_create_run --------------------------------------------------------
 
 const CreateRunInputSchema = z
   .object({
@@ -242,9 +242,9 @@ const CreateRunInputSchema = z
   .strict();
 
 server.registerTool(
-  "ai3d_create_run",
+  "king3d_create_run",
   {
-    title: "Create ai3d Run",
+    title: "Create king3d Run",
     description: `Start a new run from a reference image, a text prompt, or both.
 
 This does not build anything yet: it prepares an analysis question (a "spec request") and
@@ -252,8 +252,8 @@ returns immediately with status "needs_spec" and the full request text. To conti
 
   1. Read the returned "request" text - it explains the modelling vocabulary and what to answer.
   2. If an image was given, look at it (its path is included in the request text).
-  3. Call ai3d_submit_spec_answer with a JSON answer matching the described schema.
-  4. Call ai3d_build to build the accepted spec.
+  3. Call king3d_submit_spec_answer with a JSON answer matching the described schema.
+  4. Call king3d_build to build the accepted spec.
 
 Args:
   - image_path (string, optional): local path to a PNG/JPEG reference image
@@ -283,7 +283,7 @@ Returns JSON: { runId, status: "needs_spec", request: "<the full analysis questi
   },
 );
 
-// ---- ai3d_submit_spec_answer -------------------------------------------------
+// ---- king3d_submit_spec_answer -------------------------------------------------
 
 const SubmitSpecAnswerInputSchema = z
   .object({
@@ -291,18 +291,18 @@ const SubmitSpecAnswerInputSchema = z
     spec: z
       .union([z.string(), z.record(z.unknown())])
       .describe(
-        "The spec draft answering the request from ai3d_create_run - either a JSON object " +
+        "The spec draft answering the request from king3d_create_run - either a JSON object " +
           "or a JSON string (a markdown code fence around it is tolerated).",
       ),
   })
   .strict();
 
 server.registerTool(
-  "ai3d_submit_spec_answer",
+  "king3d_submit_spec_answer",
   {
-    title: "Submit ai3d Spec Answer",
-    description: `Answer a pending spec request for a run (see ai3d_get_run's "pending.spec" field or
-the request returned by ai3d_create_run).
+    title: "Submit king3d Spec Answer",
+    description: `Answer a pending spec request for a run (see king3d_get_run's "pending.spec" field or
+the request returned by king3d_create_run).
 
 The answer is validated against the SpecDraft schema described in the original request. An
 invalid answer (missing fields, wrong types, an unknown geometry strategy) is rejected with the
@@ -329,7 +329,7 @@ Error Handling:
   },
 );
 
-// ---- ai3d_build --------------------------------------------------------------
+// ---- king3d_build --------------------------------------------------------------
 
 const BuildInputSchema = z
   .object({
@@ -345,16 +345,16 @@ const BuildInputSchema = z
   .strict();
 
 server.registerTool(
-  "ai3d_build",
+  "king3d_build",
   {
-    title: "Build ai3d Run",
+    title: "Build king3d Run",
     description: `Run the deterministic pipeline for a run's accepted spec: geometry, lighting,
 renders, 11 quality gates, and (unless the run was created to skip it) a GLB export verified by
 re-import. This call blocks until the build finishes or fails - on a machine without a warm
 Blender daemon already running, first use of this tool can take 30-90+ seconds; subsequent
 builds are much faster (milliseconds to low seconds of actual work, plus render time).
 
-Call ai3d_get_run afterwards, or read this result's "artifacts.contact_sheet" path directly, to
+Call king3d_get_run afterwards, or read this result's "artifacts.contact_sheet" path directly, to
 look at the render before deciding whether to request a review.
 
 Args:
@@ -386,23 +386,23 @@ Error Handling:
   },
 );
 
-// ---- ai3d_request_review -----------------------------------------------------
+// ---- king3d_request_review -----------------------------------------------------
 
 const RunIdInputSchema = z.object({ run_id: z.string().min(1).describe("The run to review.") }).strict();
 
 server.registerTool(
-  "ai3d_request_review",
+  "king3d_request_review",
   {
-    title: "Request ai3d Review",
+    title: "Request king3d Review",
     description: `Ask for a judgement on a built run: how well the render matches the reference (or,
 with no reference, whether the object is internally coherent), and any defects worth fixing.
 
 Returns immediately with status "needs_review" and the full request text - it names the contact
-sheet image to look at (get its path from ai3d_get_run's report.artifacts, or the build result)
-and the JSON schema the verdict must follow. Answer it with ai3d_submit_review_answer.
+sheet image to look at (get its path from king3d_get_run's report.artifacts, or the build result)
+and the JSON schema the verdict must follow. Answer it with king3d_submit_review_answer.
 
 If a review has already been recorded for this run, returns status "review_ready" instead of a
-new request - see ai3d_get_run's report.review for the existing verdict.
+new request - see king3d_get_run's report.review for the existing verdict.
 
 Args:
   - run_id (string): the run to review (must already be built)
@@ -424,7 +424,7 @@ Error Handling:
   },
 );
 
-// ---- ai3d_submit_review_answer -----------------------------------------------
+// ---- king3d_submit_review_answer -----------------------------------------------
 
 const SubmitReviewAnswerInputSchema = z
   .object({
@@ -432,22 +432,22 @@ const SubmitReviewAnswerInputSchema = z
     verdict: z
       .union([z.string(), z.record(z.unknown())])
       .describe(
-        "The review verdict answering the request from ai3d_request_review - either a JSON " +
+        "The review verdict answering the request from king3d_request_review - either a JSON " +
           "object or a JSON string (a markdown code fence around it is tolerated).",
       ),
   })
   .strict();
 
 server.registerTool(
-  "ai3d_submit_review_answer",
+  "king3d_submit_review_answer",
   {
-    title: "Submit ai3d Review Answer",
-    description: `Answer a pending review request for a run (see ai3d_get_run's "pending.review" field).
+    title: "Submit king3d Review Answer",
+    description: `Answer a pending review request for a run (see king3d_get_run's "pending.review" field).
 
 Any defect in the verdict that carries a machine-applicable fix (a path into the spec plus a new
 value - sizes, placements, rotations, or material colour/metallic/roughness only, never
 structure) is applied to a copy of the spec and written to spec.repaired.json. Nothing is
-rebuilt automatically: call ai3d_build with from_repaired: true to see the result.
+rebuilt automatically: call king3d_build with from_repaired: true to see the result.
 
 Args:
   - run_id (string): the run to answer
@@ -477,10 +477,10 @@ Error Handling:
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  log.info("ai3d-mcp-server running on stdio");
+  log.info("king3d-mcp-server running on stdio");
 }
 
 main().catch((error: unknown) => {
-  log.error("fatal error starting ai3d-mcp-server", errorMessage(error));
+  log.error("fatal error starting king3d-mcp-server", errorMessage(error));
   process.exit(1);
 });

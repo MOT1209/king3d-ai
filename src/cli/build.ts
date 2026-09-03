@@ -1,5 +1,5 @@
 /**
- * `ai3d build` - run a SceneSpec through the deterministic pipeline.
+ * `king3d build` - run a SceneSpec through the deterministic pipeline.
  *
  * This is the half that needs no model: geometry, lighting, renders, gates and a
  * verified export. The image-to-spec and review stages wrap around it.

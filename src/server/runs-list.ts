@@ -94,7 +94,7 @@ export async function readRunSummary(id: string): Promise<RunSummary> {
   return summary;
 }
 
-/** A directory under runs/ counts as a run only if ai3d itself put a run's own
+/** A directory under runs/ counts as a run only if king3d itself put a run's own
  *  marker there - `runs/fixtures/` (the fixtures:build ground-truth cache) and
  *  any other incidental subdirectory must not show up as a phantom run. */
 function looksLikeARun(dir: string): boolean {
@@ -105,7 +105,7 @@ export async function listRuns(): Promise<RunSummary[]> {
   if (!existsSync(paths.runs)) return [];
   const entries = readdirSync(paths.runs, { withFileTypes: true })
     // ".daemon.json" and "daemon.log" live in the same directory as run
-    // directories; only directories that carry ai3d's own run markers count.
+    // directories; only directories that carry king3d's own run markers count.
     .filter((e) => e.isDirectory() && looksLikeARun(join(paths.runs, e.name)));
 
   const summaries = await Promise.all(entries.map((e) => readRunSummary(e.name)));

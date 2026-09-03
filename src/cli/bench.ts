@@ -108,7 +108,7 @@ export async function runBench(asJson: boolean): Promise<number> {
     process.stdout.write(JSON.stringify({ samples }, null, 2) + "\n");
   } else {
     const width = Math.max(...samples.map((s) => s.label.length));
-    process.stdout.write("ai3d bench\n");
+    process.stdout.write("king3d bench\n");
     for (const s of samples) {
       const value = s.ms < 0 ? "     n/a" : `${(s.ms / 1000).toFixed(1)}s`.padStart(8);
       process.stdout.write(`  ${s.label.padEnd(width)}  ${value}${s.note ? `  ${s.note}` : ""}\n`);
