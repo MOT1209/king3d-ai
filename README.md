@@ -22,11 +22,15 @@ The pipeline runs end to end: reference image in, verified GLB out.
 * **Review and repair** - similarity score plus defects, each optionally carrying
   a fix applied back to the spec. `ai3d review --rebuild`
 * **Viewer** - the exported GLB in a browser. `ai3d viewer`
+* **Dashboard** - a browser control panel over the whole loop: upload, spec,
+  build (streamed live), report, model, review, repair, rebuild. `ai3d web`
+  `docs/dashboard.md`
 
-88 tests pass: 67 under vitest, 21 inside Blender.
+102 tests pass: 81 under vitest, 21 inside Blender (includes the code paths the
+dashboard reuses from the CLI's own pipeline functions).
 
-Not built yet: multi-view input, LOD generation, external 3D-generation
-providers, and a web interface.
+Not built yet: multi-view input, LOD generation, and external 3D-generation
+providers.
 
 ## Quick start
 
@@ -34,6 +38,12 @@ providers, and a web interface.
 npm install
 node src/cli/index.ts doctor                  # check the environment
 node src/cli/index.ts fixtures:build          # render a reference to work from
+node src/cli/index.ts web                     # or: the CLI flow below
+```
+
+Either drive it from the dashboard at `http://127.0.0.1:5180`, or from the CLI:
+
+```bash
 node src/cli/index.ts gen --image tests/fixtures/mug_reference.png --run-id slice
 #   answer the spec request it prints, then re-run the same command
 node src/cli/index.ts review slice            # judge it, repair the spec
@@ -72,7 +82,9 @@ src/integrations/blender/ the bridge: protocol, framing, backends, daemon
 src/spec/                 SceneSpec and fixtures
 src/pipeline/             builder, gates, review, run orchestration
 src/providers/            model providers (agent-in-the-loop by default)
+src/server/               dashboard: pure JSON routes + the node:http adapter
 src/cli/                  the ai3d command
+web/                      dashboard frontend (vanilla HTML/JS, no build step)
 blender/ai3dlib/          the Blender-side Python
 blender/tests/            unit tests that run inside Blender
 tests/                    vitest suites

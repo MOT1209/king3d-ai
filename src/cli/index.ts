@@ -29,6 +29,7 @@ Commands:
   bench                  Measure startup and render cost on this machine
   test:blender           Run the Blender-side unit suite (inside Blender)
   fixtures:build         Render the ground-truth reference image
+  web                    Start the dashboard (upload, build, review, view)
 
 Options:
   --json                 Machine-readable output where supported
@@ -179,6 +180,13 @@ async function main(argv: string[]): Promise<number> {
       const { runFixtures } = await import("./fixtures.ts");
       return runFixtures({
         ...(values["engine"] ? { engine: values["engine"] as "WORKBENCH" | "EEVEE" | "CYCLES" } : {}),
+      });
+    }
+
+    case "web": {
+      const { runWeb } = await import("./web.ts");
+      return runWeb({
+        ...(values["port"] ? { port: Number(values["port"]) } : {}),
       });
     }
 

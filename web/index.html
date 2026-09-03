@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ai3d dashboard</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>ai3d</h1>
+      <span class="subtitle">image / prompt &rarr; verified 3D asset</span>
+    </header>
+
+    <main>
+      <aside id="sidebar">
+        <form id="new-run-form">
+          <h2>New run</h2>
+          <label class="file-drop">
+            <input type="file" id="new-image" accept="image/png,image/jpeg" />
+            <span>choose reference image</span>
+          </label>
+          <img id="image-preview" hidden />
+          <textarea id="new-prompt" placeholder="or describe the object in words" rows="3"></textarea>
+          <textarea id="new-hints" placeholder="extra hints (optional): scale, use, material" rows="2"></textarea>
+          <button type="submit" id="new-run-submit">Create run</button>
+        </form>
+
+        <h2>Runs</h2>
+        <ul id="run-list"></ul>
+      </aside>
+
+      <section id="content">
+        <div id="detail-empty" class="empty-state">
+          <p>Select a run, or create one.</p>
+        </div>
+
+        <div id="detail" hidden>
+          <div class="detail-header">
+            <div>
+              <h2 id="detail-title">&mdash;</h2>
+              <code id="detail-id"></code>
+            </div>
+            <span id="detail-status" class="run-status"></span>
+          </div>
+
+          <nav class="tabs">
+            <button class="tab-button active" data-tab="spec">Spec</button>
+            <button class="tab-button" data-tab="build">Build</button>
+            <button class="tab-button" data-tab="report">Report</button>
+            <button class="tab-button" data-tab="model">Model</button>
+            <button class="tab-button" data-tab="review">Review</button>
+          </nav>
+
+          <div id="tab-spec" class="tab-pane active"></div>
+          <div id="tab-build" class="tab-pane"></div>
+          <div id="tab-report" class="tab-pane"></div>
+          <div id="tab-model" class="tab-pane"></div>
+          <div id="tab-review" class="tab-pane"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

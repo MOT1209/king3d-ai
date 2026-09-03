@@ -5,6 +5,7 @@
  * the same renders and the same scores, which is what makes a repair loop
  * meaningful - a change in the report means a change in the spec, not noise.
  */
+import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { loadConfig, paths, type Ai3dConfig } from "../core/config.ts";
@@ -52,7 +53,11 @@ export function runPaths(runId: string): RunPaths {
 
 export function newRunId(prefix = "run"): string {
   const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15);
-  return `${prefix}_${stamp}`;
+  // The timestamp alone only has second-level resolution: two calls within the
+  // same second - two quick CLI invocations, or two dashboard uploads - would
+  // otherwise collide and silently overwrite the first run's directory.
+  const suffix = randomUUID().slice(0, 6);
+  return `${prefix}_${stamp}_${suffix}`;
 }
 
 export interface BuildOptions {

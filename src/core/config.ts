@@ -27,6 +27,7 @@ export const paths = {
   inputs: join(PROJECT_ROOT, "inputs"),
   fixtures: join(PROJECT_ROOT, "tests", "fixtures"),
   viewer: join(PROJECT_ROOT, "viewer"),
+  web: join(PROJECT_ROOT, "web"),
 } as const;
 
 /** Windows install roots scanned for `Blender <version>/blender.exe`. */

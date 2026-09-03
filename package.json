@@ -17,7 +17,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:blender": "node src/cli/index.ts test:blender",
-    "bench": "node src/cli/index.ts bench"
+    "bench": "node src/cli/index.ts bench",
+    "web": "node src/cli/index.ts web"
   },
   "dependencies": {
     "zod": "^3.24.1"
