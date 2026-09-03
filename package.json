@@ -8,7 +8,8 @@
     "node": ">=24"
   },
   "bin": {
-    "ai3d": "./src/cli/index.ts"
+    "ai3d": "./src/cli/index.ts",
+    "ai3d-mcp-server": "./src/mcp/index.ts"
   },
   "scripts": {
     "ai3d": "node src/cli/index.ts",
@@ -18,9 +19,11 @@
     "test:watch": "vitest",
     "test:blender": "node src/cli/index.ts test:blender",
     "bench": "node src/cli/index.ts bench",
-    "web": "node src/cli/index.ts web"
+    "web": "node src/cli/index.ts web",
+    "mcp": "node src/mcp/index.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

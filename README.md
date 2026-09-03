@@ -25,9 +25,12 @@ The pipeline runs end to end: reference image in, verified GLB out.
 * **Dashboard** - a browser control panel over the whole loop: upload, spec,
   build (streamed live), report, model, review, repair, rebuild. `ai3d web`
   `docs/dashboard.md`
+* **MCP server** - the same pipeline as MCP tools, so any MCP-compatible coding
+  agent (Claude Code, Claude Desktop, Cursor, Windsurf, ...) can drive it
+  directly over stdio. `node src/mcp/index.ts` `docs/mcp-server.md`
 
-102 tests pass: 81 under vitest, 21 inside Blender (includes the code paths the
-dashboard reuses from the CLI's own pipeline functions).
+118 tests pass: 97 under vitest, 21 inside Blender (includes the code paths the
+dashboard and the MCP server both reuse from the CLI's own pipeline functions).
 
 Not built yet: multi-view input, LOD generation, and external 3D-generation
 providers.
@@ -83,6 +86,7 @@ src/spec/                 SceneSpec and fixtures
 src/pipeline/             builder, gates, review, run orchestration
 src/providers/            model providers (agent-in-the-loop by default)
 src/server/               dashboard: pure JSON routes + the node:http adapter
+src/mcp/                  MCP server: same routes, exposed as tools over stdio
 src/cli/                  the ai3d command
 web/                      dashboard frontend (vanilla HTML/JS, no build step)
 blender/ai3dlib/          the Blender-side Python
