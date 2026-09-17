@@ -30,8 +30,13 @@ afterAll(async () => {
   await Promise.all(createdRunIds.map((id) => rm(runPaths(id).dir, { recursive: true, force: true })));
 });
 
-async function call(name: string, args: Record<string, unknown> = {}) {
-  const res = await client.callTool({ name, arguments: args });
+/**
+ * Call a tool. `timeoutMs` overrides the MCP client's 60s default, which a
+ * cold Blender start (30-90s on modest hardware) can exceed - king3d_doctor
+ * performs that check when no daemon is running, so it needs the headroom.
+ */
+async function call(name: string, args: Record<string, unknown> = {}, timeoutMs?: number) {
+  const res = await client.callTool({ name, arguments: args }, undefined, timeoutMs ? { timeout: timeoutMs } : undefined);
   const text = (res.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
   let json: unknown = undefined;
   try {
@@ -86,7 +91,9 @@ describe("tool discovery", () => {
 
 describe("king3d_doctor", () => {
   it("runs environment checks and returns structured content", async () => {
-    const result = await call("king3d_doctor");
+    // The doctor cold-starts Blender when the daemon is down (up to 300s by
+    // default), which blows past the MCP client's 60s default request timeout.
+    const result = await call("king3d_doctor", {}, 330_000);
     expect(result.isError).toBe(false);
     expect(result.text).toContain("king3d doctor");
   });
