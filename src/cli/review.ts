@@ -9,10 +9,11 @@ import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Ai3dError } from "../core/errors.ts";
+import { loadConfig } from "../core/config.ts";
 import { formatGateReport, withSimilarity, type GateReport } from "../pipeline/gates.ts";
 import { applyRepairs, buildReviewRequest, type Defect } from "../pipeline/review.ts";
 import { buildFromSpec, runPaths } from "../pipeline/run.ts";
-import { AgentInLoopProvider } from "../providers/agent-in-loop.ts";
+import { createReviewProvider } from "../providers/index.ts";
 import { NeedsModelInput } from "../providers/provider.ts";
 import { safeParseSceneSpec, type SceneSpec } from "../spec/scene-spec.ts";
 
@@ -64,7 +65,7 @@ export async function runReview(options: ReviewCommandOptions): Promise<number> 
   // being told again. Only fall back to the flag for a run that has none.
   const reference = options.referenceImage ?? findRunReference(rp.dir);
 
-  const provider = new AgentInLoopProvider({ promptDir: rp.prompts });
+  const provider = createReviewProvider(loadConfig(), rp.prompts);
   const request = buildReviewRequest({
     spec,
     sheetPath: rp.sheet,

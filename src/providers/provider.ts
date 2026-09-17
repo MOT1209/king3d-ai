@@ -55,3 +55,16 @@ export interface ModelProvider {
    */
   ask<T>(request: VisionRequest<T>): Promise<T>;
 }
+
+/**
+ * A provider that keeps its request/response pairs on disk, so a run's
+ * prompts stay inspectable and a stage can be resumed after an answer lands.
+ *
+ * The deterministic provider exposes these too - delegating to whichever
+ * provider handled the spec stage - so callers can locate a stage's files
+ * without knowing which provider answered it.
+ */
+export interface FileBackedProvider extends ModelProvider {
+  requestPath(stage: string): string;
+  responsePath(stage: string): string;
+}

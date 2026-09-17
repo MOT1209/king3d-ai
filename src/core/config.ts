@@ -127,6 +127,17 @@ function envInt(name: string, fallback: number): number {
  */
 export type BackendKind = "daemon" | "headless";
 
+/**
+ * Who answers the review stage.
+ * "agent": the agent-in-the-loop provider writes a request and waits for a
+ *   judgement - the default, and the original behaviour.
+ * "deterministic": the review is derived from the gate measurements alone
+ *   (see src/providers/deterministic.ts). No model tokens, no human, but it
+ *   judges only what the gates measure - proportions and hygiene, not visual
+ *   likeness to a photograph.
+ */
+export type ReviewProvider = "agent" | "deterministic";
+
 export interface Ai3dConfig {
   backend: BackendKind;
   bridgeHost: string;
@@ -135,6 +146,8 @@ export interface Ai3dConfig {
   allowPythonExec: boolean;
   /** Per-command budget for a headless Blender invocation. */
   blenderTimeoutMs: number;
+  /** Which provider answers the review stage. */
+  reviewProvider: ReviewProvider;
 }
 
 export function loadConfig(overrides: Partial<Ai3dConfig> = {}): Ai3dConfig {
@@ -151,8 +164,18 @@ export function loadConfig(overrides: Partial<Ai3dConfig> = {}): Ai3dConfig {
     bridgePort: envInt("KING3D_BRIDGE_PORT", 9877),
     allowPythonExec: process.env["KING3D_ALLOW_PYTHON_EXEC"] === "1",
     blenderTimeoutMs: envInt("KING3D_BLENDER_TIMEOUT_MS", 300_000),
+    reviewProvider: parseReviewProvider(process.env["KING3D_REVIEW_PROVIDER"]),
     ...overrides,
   };
+}
+
+function parseReviewProvider(raw: string | undefined): ReviewProvider {
+  if (raw === undefined) return "agent";
+  const lowered = raw.toLowerCase();
+  if (lowered !== "agent" && lowered !== "deterministic") {
+    throw new Ai3dError("CONFIG_INVALID", `KING3D_REVIEW_PROVIDER must be "agent" or "deterministic", got "${raw}"`);
+  }
+  return lowered;
 }
 
 export function runDir(runId: string): string {

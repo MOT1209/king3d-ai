@@ -15,13 +15,20 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
-import { paths } from "../core/config.ts";
+import { paths, loadConfig } from "../core/config.ts";
 import { Ai3dError, errorMessage } from "../core/errors.ts";
 import { buildSpecRequest } from "../pipeline/analyze.ts";
 import { formatGateReport, withSimilarity, type GateReport } from "../pipeline/gates.ts";
-import { applyRepairs, buildReviewRequest, type Defect } from "../pipeline/review.ts";
+import {
+  applyRepairs,
+  buildReviewRequest,
+  type Defect,
+  type RepairOutcome,
+  type ReviewVerdict,
+} from "../pipeline/review.ts";
 import { newRunId } from "../pipeline/run.ts";
 import { AgentInLoopProvider } from "../providers/agent-in-loop.ts";
+import { createReviewProvider } from "../providers/index.ts";
 import { NeedsModelInput } from "../providers/provider.ts";
 import { completeDraft, safeParseSceneSpec, type SceneSpec } from "../spec/scene-spec.ts";
 import { listRuns, readRunSummary, runExists, runPaths, type RunPaths } from "./runs-list.ts";
@@ -235,6 +242,53 @@ export async function apiSpecAnswer(id: string, input: AnswerInput): Promise<Jso
 
 // ---------------------------------------------------------------- review
 
+/**
+ * Fold a review verdict into the run: merge similarity into the scores, apply
+ * any machine-applicable fixes to a repaired spec, and persist the report.
+ *
+ * Shared by the request path (when a provider answers synchronously, as the
+ * deterministic one does) and the answer path (when a human wrote the verdict
+ * to disk), so both produce the same on-disk result.
+ */
+async function recordReview(
+  rp: RunPaths,
+  spec: SceneSpec,
+  stored: Record<string, unknown>,
+  storedScores: GateReport["scores"],
+  verdict: ReviewVerdict,
+): Promise<{ merged: GateReport["scores"]; repair: RepairOutcome }> {
+  const merged = withSimilarity(storedScores, verdict.similarity);
+  const repair = applyRepairs(spec, verdict.defects as Defect[]);
+  const repairedPath = join(rp.dir, "spec.repaired.json");
+  if (repair.applied.length > 0) {
+    await writeFile(repairedPath, JSON.stringify(repair.spec, null, 2), "utf8");
+  }
+
+  await writeFile(
+    rp.report,
+    JSON.stringify(
+      {
+        ...stored,
+        scores: merged,
+        review: {
+          similarity: verdict.similarity,
+          verdict: verdict.verdict,
+          observations: verdict.observations,
+          defects: verdict.defects,
+          applied: repair.applied,
+          skipped: repair.skipped,
+          repaired_spec: repair.applied.length > 0 ? repairedPath : null,
+        },
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+
+  return { merged, repair };
+}
+
 export async function apiRequestReview(id: string): Promise<JsonResult> {
   return guarded(async () => {
     const rp = requireRun(id);
@@ -255,7 +309,7 @@ export async function apiRequestReview(id: string): Promise<JsonResult> {
       passed: false,
     };
 
-    const provider = new AgentInLoopProvider({ promptDir: rp.prompts });
+    const provider = createReviewProvider(loadConfig(), rp.prompts);
     const reference = findReference(rp.dir);
     const request = buildReviewRequest({
       spec,
@@ -266,8 +320,11 @@ export async function apiRequestReview(id: string): Promise<JsonResult> {
     });
 
     try {
-      await provider.ask(request);
-      return ok({ status: "review_ready" });
+      // A provider that answers synchronously (the deterministic one) returns
+      // here; one that needs a judgement throws NeedsModelInput instead.
+      const verdict = await provider.ask(request);
+      const { merged, repair } = await recordReview(rp, spec, stored, gates.scores, verdict);
+      return ok({ status: "review_ready", verdict, scores: merged, repair });
     } catch (e) {
       if (e instanceof NeedsModelInput) {
         return ok({ status: "needs_review", request: await readFile(e.requestPath, "utf8") }, 202);
@@ -283,7 +340,7 @@ export async function apiReviewAnswer(id: string, input: AnswerInput): Promise<J
     const spec = await readJsonIfExists<SceneSpec>(rp.spec);
     if (!spec) throw new Ai3dError("RUN_STATE_INVALID", `run "${id}" has no spec`, {});
 
-    const provider = new AgentInLoopProvider({ promptDir: rp.prompts });
+    const provider = createReviewProvider(loadConfig(), rp.prompts);
     await writeFile(provider.responsePath("review"), input.text, "utf8");
 
     const stored = (await readJsonIfExists<Record<string, unknown>>(rp.report)) ?? {};
@@ -310,35 +367,7 @@ export async function apiReviewAnswer(id: string, input: AnswerInput): Promise<J
 
     const verdict = await provider.ask(request); // throws on a bad answer
 
-    const merged = withSimilarity(storedScores, verdict.similarity);
-    const repair = applyRepairs(spec, verdict.defects as Defect[]);
-    const repairedPath = join(rp.dir, "spec.repaired.json");
-    if (repair.applied.length > 0) {
-      await writeFile(repairedPath, JSON.stringify(repair.spec, null, 2), "utf8");
-    }
-
-    await writeFile(
-      rp.report,
-      JSON.stringify(
-        {
-          ...stored,
-          scores: merged,
-          review: {
-            similarity: verdict.similarity,
-            verdict: verdict.verdict,
-            observations: verdict.observations,
-            defects: verdict.defects,
-            applied: repair.applied,
-            skipped: repair.skipped,
-            repaired_spec: repair.applied.length > 0 ? repairedPath : null,
-          },
-        },
-        null,
-        2,
-      ),
-      "utf8",
-    );
-
+    const { merged, repair } = await recordReview(rp, spec, stored, storedScores, verdict);
     return ok({ verdict, scores: merged, repair });
   });
 }
