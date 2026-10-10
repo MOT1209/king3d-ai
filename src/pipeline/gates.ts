@@ -47,11 +47,14 @@ export interface GateInputs {
   similarity?: number;
 }
 
-function pass(id: string, message: string, data?: Record<string, unknown>): GateResult {
+/** Construct a passing gate result. Exported so other evaluators (e.g. the
+ *  generative-mode gates) build results the same way. */
+export function pass(id: string, message: string, data?: Record<string, unknown>): GateResult {
   return { id, passed: true, severity: "error", message, ...(data ? { data } : {}) };
 }
 
-function fail(id: string, severity: GateSeverity, message: string, data?: Record<string, unknown>): GateResult {
+/** Construct a failing gate result. Exported alongside `pass`. */
+export function fail(id: string, severity: GateSeverity, message: string, data?: Record<string, unknown>): GateResult {
   return { id, passed: false, severity, message, ...(data ? { data } : {}) };
 }
 

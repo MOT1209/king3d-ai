@@ -138,6 +138,13 @@ export type BackendKind = "daemon" | "headless";
  */
 export type ReviewProvider = "agent" | "deterministic";
 
+/**
+ * Where generative mode gets its base mesh.
+ * "http": call a TRELLIS.2 inference service (local or cloud) over HTTP.
+ * "mock": return a fixture GLB without any GPU - for development and CI.
+ */
+export type TrellisMode = "http" | "mock";
+
 export interface Ai3dConfig {
   backend: BackendKind;
   bridgeHost: string;
@@ -148,6 +155,14 @@ export interface Ai3dConfig {
   blenderTimeoutMs: number;
   /** Which provider answers the review stage. */
   reviewProvider: ReviewProvider;
+  /** How generative mode obtains its base mesh. */
+  trellisMode: TrellisMode;
+  /** Base URL of the TRELLIS.2 inference service (local or cloud). */
+  trellisUrl: string;
+  /** Budget for a single generation request (model inference can take minutes). */
+  trellisTimeoutMs: number;
+  /** Fixture GLB returned by the mock provider; defaults to a test fixture. */
+  trellisMockGlb?: string;
 }
 
 export function loadConfig(overrides: Partial<Ai3dConfig> = {}): Ai3dConfig {
@@ -165,8 +180,21 @@ export function loadConfig(overrides: Partial<Ai3dConfig> = {}): Ai3dConfig {
     allowPythonExec: process.env["KING3D_ALLOW_PYTHON_EXEC"] === "1",
     blenderTimeoutMs: envInt("KING3D_BLENDER_TIMEOUT_MS", 300_000),
     reviewProvider: parseReviewProvider(process.env["KING3D_REVIEW_PROVIDER"]),
+    trellisMode: parseTrellisMode(process.env["KING3D_TRELLIS_MODE"]),
+    trellisUrl: process.env["KING3D_TRELLIS_URL"] ?? "http://127.0.0.1:8900",
+    trellisTimeoutMs: envInt("KING3D_TRELLIS_TIMEOUT_MS", 300_000),
+    ...(process.env["KING3D_TRELLIS_MOCK_GLB"] ? { trellisMockGlb: process.env["KING3D_TRELLIS_MOCK_GLB"] } : {}),
     ...overrides,
   };
+}
+
+function parseTrellisMode(raw: string | undefined): TrellisMode {
+  if (raw === undefined) return "http";
+  const lowered = raw.toLowerCase();
+  if (lowered !== "http" && lowered !== "mock") {
+    throw new Ai3dError("CONFIG_INVALID", `KING3D_TRELLIS_MODE must be "http" or "mock", got "${raw}"`);
+  }
+  return lowered;
 }
 
 function parseReviewProvider(raw: string | undefined): ReviewProvider {

@@ -73,6 +73,7 @@ def load_handlers() -> None:
         primitives,
         pyexec,
         render,
+        repair,
         scene,
     )
 

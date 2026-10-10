@@ -48,7 +48,7 @@ async function call(name: string, args: Record<string, unknown> = {}, timeoutMs?
 }
 
 describe("tool discovery", () => {
-  it("lists all eight tools with complete metadata", async () => {
+  it("lists all nine tools with complete metadata", async () => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name).sort();
     expect(names).toEqual(
@@ -56,6 +56,7 @@ describe("tool discovery", () => {
         "king3d_build",
         "king3d_create_run",
         "king3d_doctor",
+        "king3d_generate",
         "king3d_get_run",
         "king3d_list_runs",
         "king3d_request_review",

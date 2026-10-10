@@ -27,6 +27,8 @@ import {
   type ReviewVerdict,
 } from "../pipeline/review.ts";
 import { newRunId } from "../pipeline/run.ts";
+import { buildFromGenerated } from "../pipeline/generative-run.ts";
+import { parseGenerativeSpec } from "../spec/generative-spec.ts";
 import { AgentInLoopProvider } from "../providers/agent-in-loop.ts";
 import { createReviewProvider } from "../providers/index.ts";
 import { NeedsModelInput } from "../providers/provider.ts";
@@ -174,6 +176,60 @@ export async function apiCreateRun(input: CreateRunInput): Promise<JsonResult> {
 
     const requestText = await requestSpecAnswer(rp, imagePath, context);
     return ok({ runId, status: "needs_spec", request: requestText }, 202);
+  });
+}
+
+// ---------------------------------------------------------------- generative mode
+
+export interface CreateGenerativeRunInput {
+  prompt?: string;
+  name?: string;
+  imageBase64?: string;
+  imageName?: string;
+}
+
+/**
+ * Generative mode: one synchronous call that generates a TRELLIS.2 base mesh and
+ * runs it through repair/optimise/gates. Unlike apiCreateRun there is no spec
+ * judgement loop - the mesh comes from the model, so the run completes here.
+ */
+export async function apiCreateGenerativeRun(input: CreateGenerativeRunInput): Promise<JsonResult> {
+  return guarded(async () => {
+    if (!input.prompt && !input.imageBase64) {
+      throw new Ai3dError("CONFIG_INVALID", "a generative run needs an image or a text prompt");
+    }
+    const runId = newRunId("gen");
+    const rp = runPaths(runId);
+    await mkdir(rp.dir, { recursive: true });
+
+    let imageName: string | undefined;
+    if (input.imageBase64) {
+      const ext = input.imageName ? extname(input.imageName) || ".png" : ".png";
+      imageName = `reference${ext}`;
+      await writeFile(join(rp.dir, imageName), Buffer.from(input.imageBase64, "base64"));
+    }
+
+    const objectName = input.name ?? input.prompt ?? "generated_asset";
+    const spec = parseGenerativeSpec({
+      id: runId,
+      created_at: new Date().toISOString(),
+      source: {
+        ...(imageName ? { image: imageName } : {}),
+        ...(input.prompt ? { prompt: input.prompt } : {}),
+      },
+      generator: { name: "trellis2", model: "4B" },
+      object: { name: objectName, category: "generated" },
+    });
+
+    const result = await buildFromGenerated(spec, { runId });
+    return ok({
+      runId: result.runId,
+      mode: "generative",
+      passed: result.report.passed,
+      scores: result.report.scores,
+      gates: result.report.gates,
+      exported: result.exported,
+    });
   });
 }
 

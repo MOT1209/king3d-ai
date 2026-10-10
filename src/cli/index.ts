@@ -23,6 +23,7 @@ Commands:
   daemon status          Report whether it is running
   scene                  Print the current Blender scene as JSON
   gen --image <path>     Full pipeline from a reference image or --prompt
+  gen-trellis --image <path>  Generative mode: TRELLIS.2 base mesh -> repair -> gates -> GLB
   build [spec.json]      Build a SceneSpec: geometry, renders, gates, GLB export
   review <run-id>        Judge a build against its reference and propose repairs
   viewer <run-id>        Serve the exported GLB in a browser
@@ -61,6 +62,7 @@ async function main(argv: string[]): Promise<number> {
       rebuild: { type: "boolean", default: false },
       image: { type: "string" },
       prompt: { type: "string" },
+      name: { type: "string" },
       hints: { type: "string" },
       engine: { type: "string" },
       port: { type: "string" },
@@ -170,6 +172,18 @@ async function main(argv: string[]): Promise<number> {
         ...(values["image"] ? { imagePath: values["image"] as string } : {}),
         ...(values["prompt"] ? { prompt: values["prompt"] as string } : {}),
         ...(values["hints"] ? { hints: values["hints"] as string } : {}),
+        ...(values["run-id"] ? { runId: values["run-id"] as string } : {}),
+        skipExport: values["no-export"] === true,
+        asJson,
+      });
+    }
+
+    case "gen-trellis": {
+      const { runGenTrellis } = await import("./gen-trellis.ts");
+      return runGenTrellis({
+        ...(values["image"] ? { imagePath: values["image"] as string } : {}),
+        ...(values["prompt"] ? { prompt: values["prompt"] as string } : {}),
+        ...(values["name"] ? { name: values["name"] as string } : {}),
         ...(values["run-id"] ? { runId: values["run-id"] as string } : {}),
         skipExport: values["no-export"] === true,
         asJson,

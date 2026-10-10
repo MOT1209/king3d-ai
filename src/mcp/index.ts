@@ -26,6 +26,7 @@ import { createLogger } from "../core/logger.ts";
 import { formatDoctorReport, runDoctor } from "../cli/doctor.ts";
 import { runBuildForMcp } from "./build-run.ts";
 import {
+  apiCreateGenerativeRun,
   apiCreateRun,
   apiGetRun,
   apiListRuns,
@@ -466,6 +467,59 @@ Error Handling:
   async ({ run_id, verdict }) => {
     try {
       return toToolResult(await apiReviewAnswer(run_id, { text: toResponseText(verdict) }));
+    } catch (e) {
+      return toErrorResult(e);
+    }
+  },
+);
+
+// ---- king3d_generate (generative mode) -----------------------------------------
+
+const GenerateInputSchema = z
+  .object({
+    image_path: z
+      .string()
+      .optional()
+      .describe("Path to a local reference image (PNG/JPEG), absolute or relative to the project root."),
+    prompt: z.string().optional().describe("A text description of the object, used instead of or alongside an image."),
+    name: z.string().optional().describe("Name for the generated object; defaults to the prompt."),
+  })
+  .strict();
+
+server.registerTool(
+  "king3d_generate",
+  {
+    title: "Generate a game-ready asset with TRELLIS.2",
+    description: `Generative mode: generate a base mesh from an image or prompt with TRELLIS.2, then run it
+through the King3D pipeline (import -> best-effort repair -> UV where missing -> decimate to
+budget -> export -> re-import verify -> quality gates). Unlike king3d_create_run there is no
+analysis/spec judgement loop: this is a single call that returns the finished run.
+
+Requires a reachable TRELLIS.2 inference service (KING3D_TRELLIS_URL), or KING3D_TRELLIS_MODE=mock
+for a GPU-free run against a fixture mesh.
+
+Args:
+  - image_path (string, optional): local path to a PNG/JPEG reference image
+  - prompt (string, optional): text description (used instead of or alongside an image)
+  - name (string, optional): name for the generated object
+  (at least one of image_path or prompt is required)
+
+Returns JSON: { runId, mode: "generative", passed, scores, gates, exported }`,
+    inputSchema: GenerateInputSchema.shape,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  },
+  async (params) => {
+    try {
+      if (!params.image_path && !params.prompt) {
+        throw new Ai3dError("CONFIG_INVALID", "at least one of image_path or prompt is required");
+      }
+      const image = params.image_path ? await resolveImageBase64(params.image_path) : null;
+      const result = await apiCreateGenerativeRun({
+        ...(params.prompt ? { prompt: params.prompt } : {}),
+        ...(params.name ? { name: params.name } : {}),
+        ...(image ? { imageBase64: image.base64, imageName: image.name } : {}),
+      });
+      return toToolResult(result);
     } catch (e) {
       return toErrorResult(e);
     }

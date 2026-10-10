@@ -15,7 +15,9 @@ export type Ai3dErrorCode =
   | "NEEDS_MODEL_INPUT"
   | "RUN_NOT_FOUND"
   | "RUN_STATE_INVALID"
-  | "CONFIG_INVALID";
+  | "CONFIG_INVALID"
+  | "TRELLIS_UNAVAILABLE"
+  | "TRELLIS_GENERATE_FAILED";
 
 export class Ai3dError extends Error {
   readonly code: Ai3dErrorCode;

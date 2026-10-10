@@ -1,0 +1,13 @@
+# TRELLIS.2 inference service - HTTP wrapper dependencies.
+#
+# These cover the service shell only. The TRELLIS.2 model itself, its CUDA/torch
+# stack and its weights are NOT listed here and NOT vendored: adding them is
+# gated on the licence review in README.md. Pin torch/CUDA to match your GPU and
+# the TRELLIS.2 install instructions once that is cleared.
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.29,<1.0
+python-multipart>=0.0.9
+
+# --- enabled only after the licence review (see README.md) -------------------
+# torch==<pinned-for-your-CUDA>
+# trellis2 @ git+https://github.com/microsoft/TRELLIS.2.git@<pinned-commit>

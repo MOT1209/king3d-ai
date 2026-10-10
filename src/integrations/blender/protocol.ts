@@ -314,6 +314,27 @@ export const COMMANDS = {
     }),
     result: z.object({ unwrapped: z.array(z.string()) }),
   },
+  "repair.clean": {
+    params: z.object({
+      objects: z.array(z.string()).default([]),
+      /** Vertices closer than this are welded together (metres). */
+      weld_distance_m: z.number().nonnegative().default(0.0001),
+      delete_loose: z.boolean().default(true),
+      dissolve_degenerate: z.boolean().default(true),
+      fill_holes: z.boolean().default(true),
+      recalc_normals: z.boolean().default(true),
+    }),
+    /** Residual defect counts per object, after the repair pass. */
+    result: z.object({
+      cleaned: z.array(
+        z.object({
+          name: z.string(),
+          non_manifold_edges: z.number(),
+          loose_verts: z.number(),
+        }),
+      ),
+    }),
+  },
   "export.glb": {
     params: z.object({
       output: z.string(),

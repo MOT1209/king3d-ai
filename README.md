@@ -122,6 +122,23 @@ claude mcp add king3d -- \
 </td></tr>
 </table>
 
+## Generative mode (TRELLIS.2) — optional
+
+Alongside the procedural pipeline, an opt-in **generative mode** takes a base
+mesh from Microsoft [TRELLIS.2](https://github.com/microsoft/TRELLIS.2) and runs
+it through the same quality gates (plus geometry repair) to make it game-ready.
+It needs a GPU and is kept separate from the procedural, no-black-box default.
+
+```bash
+# no GPU needed - mock provider, for trying the flow
+KING3D_TRELLIS_MODE=mock node src/cli/index.ts gen-trellis \
+  --image tests/fixtures/mug_reference.png --run-id gen_demo
+```
+
+> ⚠️ The TRELLIS.2 licence is unresolved for this project's use — see the
+> blocking checklist in [`services/trellis/README.md`](services/trellis/README.md)
+> before enabling the real model. Full details: [`docs/trellis.md`](docs/trellis.md).
+
 ## Design notes worth knowing
 
 * **The daemon is the point.** Starting Blender costs 30–90s on modest hardware
@@ -156,9 +173,11 @@ src/providers/            model providers (agent-in-the-loop by default)
 src/server/               dashboard: pure JSON routes + the node:http adapter
 src/mcp/                  MCP server: same routes, exposed as tools over stdio
 src/cli/                  the king3d command
+src/integrations/trellis/ TRELLIS.2 client (generative mode)
 web/                      dashboard frontend (vanilla HTML/JS, no build step)
 blender/ai3dlib/          the Blender-side Python
 blender/tests/            unit tests that run inside Blender
+services/trellis/         TRELLIS.2 inference microservice (Python/CUDA)
 tests/                    vitest suites
 docs/
 ```
@@ -172,3 +191,4 @@ docs/
 | [`docs/blender-bridge.md`](docs/blender-bridge.md) | The daemon, the wire protocol, measured performance |
 | [`docs/dashboard.md`](docs/dashboard.md) | The web control panel, its API, and its architecture |
 | [`docs/mcp-server.md`](docs/mcp-server.md) | The MCP tools, how to register them, a worked session |
+| [`docs/trellis.md`](docs/trellis.md) | Generative mode: TRELLIS.2 integration, repair, gates, config |

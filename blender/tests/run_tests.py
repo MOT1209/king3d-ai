@@ -87,6 +87,7 @@ class TestDispatch(unittest.TestCase):
             "inspect.all",
             "optimize.decimate",
             "uv.unwrap",
+            "repair.clean",
             "export.glb",
             "import.glb",
             "python.exec",
@@ -313,6 +314,54 @@ class TestCameraMath(unittest.TestCase):
         self.assertAlmostEqual(front[1], -10.0, places=6)  # front view looks from -Y
         right = camera.orbit_position((0, 0, 0), 10.0, 90.0, 0.0)
         self.assertAlmostEqual(right[0], 10.0, places=6)  # right view looks from +X
+
+
+class TestRepair(unittest.TestCase):
+    def setUp(self):
+        job.ensure_handlers()
+        self.ctx = fresh_context()
+
+    def _make_dirty_cube(self, name: str):
+        """A cube with one face removed (an open, non-manifold hole) and a loose
+        vertex - the kind of damage a generative base mesh arrives with."""
+        import bmesh
+
+        mesh = bpy.data.meshes.new(name)
+        obj = bpy.data.objects.new(name, mesh)
+        bpy.context.scene.collection.objects.link(obj)
+        bm = bmesh.new()
+        bmesh.ops.create_cube(bm, size=1.0)
+        bm.faces.ensure_lookup_table()
+        # Delete one face -> its four edges become open boundary (non-manifold).
+        bmesh.ops.delete(bm, geom=[bm.faces[0]], context="FACES_ONLY")
+        # A stray disconnected vertex.
+        bm.verts.new((5.0, 5.0, 5.0))
+        bm.to_mesh(mesh)
+        bm.free()
+        return obj
+
+    def test_clean_removes_loose_and_closes_holes(self):
+        self._make_dirty_cube("dirty")
+
+        before = ok(self, run("inspect.mesh", {"object": "dirty"}, self.ctx))
+        self.assertGreater(before["non_manifold_edges"], 0, "fixture should start non-manifold")
+        self.assertGreater(before["loose_verts"], 0, "fixture should start with a loose vertex")
+
+        result = ok(self, run("repair.clean", {"objects": ["dirty"]}, self.ctx))
+        residual = result["cleaned"][0]
+        self.assertEqual(residual["loose_verts"], 0, "delete_loose should drop the stray vertex")
+        self.assertEqual(residual["non_manifold_edges"], 0, "fill_holes should close the open face")
+
+        after = ok(self, run("inspect.mesh", {"object": "dirty"}, self.ctx))
+        self.assertEqual(after["loose_verts"], 0)
+        self.assertEqual(after["non_manifold_edges"], 0)
+
+    def test_clean_reports_per_object(self):
+        self._make_dirty_cube("a")
+        self._make_dirty_cube("b")
+        result = ok(self, run("repair.clean", {"objects": ["a", "b"]}, self.ctx))
+        names = {entry["name"] for entry in result["cleaned"]}
+        self.assertEqual(names, {"a", "b"})
 
 
 def main() -> int:
