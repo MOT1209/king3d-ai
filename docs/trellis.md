@@ -20,13 +20,15 @@ deterministic recipe used to clean it.
 
 ## Honest caveats
 
-- **Philosophy.** This mode uses a diffusion/generative model that needs a GPU —
-  the opposite of the procedural pipeline's "no black box, no API key" design.
-  It is opt-in for exactly that reason.
-- **Licence (unresolved).** The TRELLIS.2 licence has not been confirmed for this
-  project's intended use. See the blocking checklist in
-  [`services/trellis/README.md`](../services/trellis/README.md) before enabling
-  the real model or shipping commercially.
+- **Philosophy.** This mode uses a diffusion/generative model that needs a GPU
+  (≥24 GB VRAM, Linux, CUDA 12.4) — the opposite of the procedural pipeline's
+  "no black box, no API key" design. It is opt-in for exactly that reason.
+- **Licence (reviewed 2026-10-11).** TRELLIS.2 code and the `TRELLIS.2-4B` weights
+  are **MIT** (commercial use permitted). The only catch is the optional NVIDIA
+  render extras `nvdiffrast`/`nvdiffrec`, which are **non-commercial**; the
+  image→GLB path uses `o-voxel`, so install without those flags and skip the
+  preview render for a commercial build. Full findings and the residual
+  dry-install check: [`services/trellis/README.md`](../services/trellis/README.md).
 - **Repair is best-effort.** `repair.clean` welds, drops loose geometry, dissolves
   degenerate faces, fills holes and makes normals consistent. It is not true
   retopology and cannot guarantee a manifold result for every input; the

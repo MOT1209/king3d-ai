@@ -135,9 +135,10 @@ KING3D_TRELLIS_MODE=mock node src/cli/index.ts gen-trellis \
   --image tests/fixtures/mug_reference.png --run-id gen_demo
 ```
 
-> ⚠️ The TRELLIS.2 licence is unresolved for this project's use — see the
-> blocking checklist in [`services/trellis/README.md`](services/trellis/README.md)
-> before enabling the real model. Full details: [`docs/trellis.md`](docs/trellis.md).
+> Licence (reviewed): TRELLIS.2 code and `TRELLIS.2-4B` weights are **MIT**
+> (commercial OK); just install without the optional non-commercial NVIDIA
+> render extras. Needs a ≥24 GB GPU. Details:
+> [`services/trellis/README.md`](services/trellis/README.md) · [`docs/trellis.md`](docs/trellis.md).
 
 ## Design notes worth knowing
 

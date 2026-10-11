@@ -8,6 +8,10 @@ fastapi>=0.110,<1.0
 uvicorn[standard]>=0.29,<1.0
 python-multipart>=0.0.9
 
-# --- enabled only after the licence review (see README.md) -------------------
+# --- the model stack (see README.md Step 0) ----------------------------------
+# TRELLIS.2 is MIT (code + 4B weights). Install it via its own setup.sh, NOT via
+# pip here, and for a COMMERCIAL build omit the non-commercial NVIDIA extras:
+#   . ./setup.sh --new-env --basic --flash-attn --o-voxel --cumesh --flexgemm
+# Add --nvdiffrast --nvdiffrec only for research/preview rendering (NVIDIA
+# non-commercial licence). Needs CUDA 12.4 and a GPU with >=24 GB VRAM.
 # torch==<pinned-for-your-CUDA>
-# trellis2 @ git+https://github.com/microsoft/TRELLIS.2.git@<pinned-commit>
