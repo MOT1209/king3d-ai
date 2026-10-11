@@ -328,6 +328,22 @@ button:disabled {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
+/* Secondary action (generative mode) sits below the primary Create-run button;
+   it keeps the neutral button surface but borrows the accent for its outline. */
+.btn-secondary {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-strong));
+  color: var(--text);
+}
+.btn-secondary:hover {
+  border-color: var(--accent);
+}
+
+.field-hint {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
 /* ------------------------------------------------------------------ run list */
 
 #run-list {

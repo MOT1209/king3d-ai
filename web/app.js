@@ -124,6 +124,46 @@ function fileToBase64(file) {
   });
 }
 
+// Generative mode: one synchronous call (generate -> repair -> gates), no spec
+// or review loop. The pipeline runs server-side, so this request can take a
+// while; keep the button disabled until it returns.
+async function submitGenerate() {
+  const prompt = $("#new-prompt").value.trim();
+  const fileInput = $("#new-image");
+  const file = fileInput.files[0];
+
+  if (!prompt && !file) {
+    toast("attach an image or write a prompt", true);
+    return;
+  }
+
+  const body = {};
+  if (prompt) body.prompt = prompt;
+  if (file) {
+    body.imageBase64 = await fileToBase64(file);
+    body.imageName = file.name;
+  }
+
+  const btn = $("#new-generate-submit");
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.textContent = "Generating…";
+  toast("generating via TRELLIS.2 — this can take a while");
+  try {
+    const { data } = await api("POST", "/api/generate", body);
+    toast(`run ${data.runId} ${data.passed ? "passed" : "finished"} the gates`, !data.passed);
+    $("#new-run-form").reset();
+    $("#image-preview").hidden = true;
+    await refreshRunList();
+    await openRun(data.runId);
+  } catch (e) {
+    toast(e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
 // ------------------------------------------------------------------ run detail
 
 async function openRun(runId) {
@@ -479,6 +519,7 @@ function switchTab(name) {
 
 document.addEventListener("DOMContentLoaded", () => {
   $("#new-run-form").addEventListener("submit", submitNewRun);
+  $("#new-generate-submit").addEventListener("click", submitGenerate);
   $("#new-image").addEventListener("change", (e) => {
     const file = e.target.files[0];
     const preview = $("#image-preview");
