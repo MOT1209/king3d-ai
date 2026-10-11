@@ -9,9 +9,11 @@ uvicorn[standard]>=0.29,<1.0
 python-multipart>=0.0.9
 
 # --- the model stack (see README.md Step 0) ----------------------------------
-# TRELLIS.2 is MIT (code + 4B weights). Install it via its own setup.sh, NOT via
-# pip here, and for a COMMERCIAL build omit the non-commercial NVIDIA extras:
-#   . ./setup.sh --new-env --basic --flash-attn --o-voxel --cumesh --flexgemm
-# Add --nvdiffrast --nvdiffrec only for research/preview rendering (NVIDIA
-# non-commercial licence). Needs CUDA 12.4 and a GPU with >=24 GB VRAM.
+# TRELLIS.2 is MIT (code + 4B weights), BUT the stock textured-GLB export
+# (o_voxel.postprocess.to_glb) imports and uses nvdiffrast (NVIDIA, NON-
+# COMMERCIAL) to bake the texture. Research build:
+#   . ./setup.sh --new-env --basic --flash-attn --nvdiffrast --nvdiffrec \
+#                 --cumesh --o-voxel --flexgemm
+# Commercial build: resolve the nvdiffrast dependency first (README Step 0,
+# options 2-4). Install via setup.sh, NOT pip. Needs CUDA 12.4 and >=24 GB VRAM.
 # torch==<pinned-for-your-CUDA>
