@@ -7,6 +7,9 @@
 fastapi>=0.110,<1.0
 uvicorn[standard]>=0.29,<1.0
 python-multipart>=0.0.9
+# Geometry-only GLB export (commercial path: no nvdiffrast). trimesh writes the
+# vertices+faces GLB that King3D then materialises and UV-unwraps.
+trimesh>=4.0
 
 # --- the model stack (see README.md Step 0) ----------------------------------
 # TRELLIS.2 is MIT (code + 4B weights), BUT the stock textured-GLB export

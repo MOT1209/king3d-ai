@@ -36,8 +36,11 @@ _MODEL_ID = os.environ.get("TRELLIS_MODEL_ID", "microsoft/TRELLIS.2")
 def _load_pipeline():
     """Load the TRELLIS.2 pipeline once.
 
-    Left unimplemented on purpose: enabling it is gated on the licence review.
-    When cleared, import the real pipeline here and return it, e.g.:
+    Left unimplemented on purpose until the model is wired in. When enabling,
+    import ONLY the generation pipeline - do NOT import o_voxel.postprocess
+    (its module-level `import nvdiffrast` pulls in the non-commercial NVIDIA
+    rasterizer; see README Step 0). For a commercial build King3D uses the
+    geometry-only export below, which never touches nvdiffrast:
 
         from trellis2.pipelines import Trellis2ImageTo3DPipeline
         pipe = Trellis2ImageTo3DPipeline.from_pretrained(_MODEL_ID)
@@ -45,9 +48,8 @@ def _load_pipeline():
         return pipe
     """
     raise NotImplementedError(
-        "TRELLIS.2 model is not wired in yet - see services/trellis/README.md "
-        "(licence review must be completed first). Use KING3D_TRELLIS_MODE=mock "
-        "for a GPU-free run in the meantime."
+        "TRELLIS.2 model is not wired in yet - see services/trellis/README.md. "
+        "Use KING3D_TRELLIS_MODE=mock for a GPU-free run in the meantime."
     )
 
 
@@ -87,12 +89,26 @@ async def generate(
     image_bytes = await image.read() if image is not None else None
 
     # --- wire the real inference here once the model is enabled ---------------
-    # outputs = pipe.run(
-    #     image=io.BytesIO(image_bytes) if image_bytes else None,
-    #     prompt=prompt,
-    #     seed=seed,
-    # )
-    # glb_bytes = outputs.to_glb(with_pbr=True)   # keep PBR materials for King3D
-    # return Response(content=glb_bytes, media_type="model/gltf-binary")
+    # GEOMETRY-ONLY export (commercial-safe: no nvdiffrast). King3D supplies the
+    # material and UVs, so we export only vertices+faces via trimesh and never
+    # call o_voxel.postprocess.to_glb (which rasterizes the texture with the
+    # non-commercial NVIDIA nvdiffrast). See README Step 0, option 3.
+    #
+    #   from PIL import Image as _Image
+    #   mesh = pipe.run(_Image.open(io.BytesIO(image_bytes)))[0]   # seed=seed if supported
+    #   import trimesh
+    #   tm = trimesh.Trimesh(
+    #       vertices=mesh.vertices.detach().cpu().numpy(),
+    #       faces=mesh.faces.detach().cpu().numpy(),
+    #       process=False,
+    #   )
+    #   buf = io.BytesIO()
+    #   tm.export(buf, file_type="glb")   # geometry only; no textures/materials
+    #   return Response(content=buf.getvalue(), media_type="model/gltf-binary")
+    #
+    # (Exact attribute access, e.g. mesh.vertices/mesh.faces, must be confirmed
+    # against the installed trellis2 version. For a RESEARCH build wanting
+    # TRELLIS's baked PBR, install nvdiffrast and use o_voxel.postprocess.to_glb
+    # instead - but that is NON-COMMERCIAL.)
     _ = (pipe, image_bytes, prompt, seed, io)  # referenced so linters stay quiet
     return JSONResponse({"error": "inference not implemented"}, status_code=501)

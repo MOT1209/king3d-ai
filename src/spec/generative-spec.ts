@@ -16,6 +16,7 @@
  * the same spec drives the same import -> repair -> optimise -> export sequence.
  */
 import { z } from "zod";
+import { RGBA } from "../integrations/blender/protocol.ts";
 import { QualityTargets, RenderProfile } from "./scene-spec.ts";
 
 export const GENERATIVE_SPEC_VERSION = 1;
@@ -61,6 +62,19 @@ export const GenerativeSpecFields = z
       description: z.string().default(""),
     }),
     repair: RepairRecipe.default({}),
+    // Default material King3D applies to the imported mesh. TRELLIS runs in
+    // GEOMETRY-ONLY mode (the textured-GLB export depends on the non-commercial
+    // nvdiffrast rasterizer, so it is avoided), which means the base mesh arrives
+    // with no material. King3D assigns this one and unwraps a fresh UV, producing
+    // a game-ready GLB with a clean PBR material slot of its own.
+    material: z
+      .object({
+        name: z.string().default("trellis_base"),
+        base_color: RGBA.default([0.8, 0.8, 0.8, 1]),
+        metallic: z.number().min(0).max(1).default(0),
+        roughness: z.number().min(0).max(1).default(0.6),
+      })
+      .default({}),
     // Reused verbatim from SceneSpec so the two modes share one definition of
     // "game-ready" (triangle budget, UV requirement, manifold requirement, ...)
     // and one render profile.

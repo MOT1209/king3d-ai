@@ -35,21 +35,22 @@ deterministic recipe used to clean it.
   degenerate faces, fills holes and makes normals consistent. It is not true
   retopology and cannot guarantee a manifold result for every input; the
   `generative_integrity` gate reports what remains.
-- **PBR vs decimation.** TRELLIS meshes ship their own UVs and textures. The
-  pipeline only re-unwraps meshes that have *no* UV, to avoid breaking the
-  imported texture mapping, and decimation is capped by `min_ratio`. Aggressive
-  triangle budgets can still distort baked PBR — prefer a gentler `target_tris`
-  for textured assets.
+- **Geometry-only, King3D owns the material.** To stay off nvdiffrast (commercial
+  path), the service exports only geometry — no baked PBR texture. King3D then
+  assigns the spec's default material (`spec.material`) and unwraps a fresh UV, so
+  the output is a clean, King3D-owned PBR asset. A textured GLB fed in directly is
+  still handled: meshes that already carry a UV/material are left as-is.
 
 ## Architecture
 
 ```
-image/prompt ─▶ TRELLIS.2 service (Python/CUDA, HTTP) ─▶ base.glb
+image/prompt ─▶ TRELLIS.2 service (geometry-only, Python/CUDA, HTTP) ─▶ base.glb
                                                            │
    ┌───────────────────────────────────────────────────────┘
    ▼
-import.glb → repair.clean → uv.unwrap (missing only) → optimize.decimate
-           → export.glb → import.glb (verify) → generative gates → report.json
+import.glb → repair.clean → material.assign (missing only) → uv.unwrap (missing
+           only) → optimize.decimate → export.glb → import.glb (verify)
+           → generative gates → report.json
 ```
 
 - **Inference service** — `services/trellis/` (FastAPI). The GPU concern stays

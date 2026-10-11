@@ -136,3 +136,13 @@ describe("evaluateGeneratedGates", () => {
     expect(gate(after, "export_written")?.passed).toBe(true);
   });
 });
+
+describe("GenerativeSpec defaults", () => {
+  it("applies a default material King3D assigns to geometry-only meshes", () => {
+    const spec = specWith();
+    expect(spec.material.name).toBe("trellis_base");
+    expect(spec.material.base_color).toEqual([0.8, 0.8, 0.8, 1]);
+    expect(spec.material.metallic).toBe(0);
+    expect(spec.material.roughness).toBe(0.6);
+  });
+});
