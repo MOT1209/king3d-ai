@@ -685,7 +685,26 @@ button:disabled {
 /* ------------------------------------------------------------------ model tab */
 
 #tab-model {
-  height: 520px;
+  height: 640px;
+}
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--space-3);
+  height: 100%;
+}
+/* Narrow screens (phone, portrait): stack the inspector under the viewport. */
+@media (max-width: 860px) {
+  #tab-model {
+    height: auto;
+  }
+  .editor-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  #viewer-stage {
+    height: 360px;
+  }
 }
 #viewer-stage {
   width: 100%;
@@ -697,6 +716,93 @@ button:disabled {
 }
 #viewer-stage canvas {
   display: block;
+}
+
+/* ------------------------------------------------------------------ editor */
+
+#editor-panel {
+  min-width: 0;
+  overflow-y: auto;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+#editor-panel h3,
+#editor-panel h4 {
+  margin: 0;
+  font-size: 13px;
+}
+.ed-fail {
+  color: var(--fail);
+  font-weight: 600;
+}
+.ed-parts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.ed-part {
+  padding: 4px 9px;
+  font-size: 12px;
+}
+.ed-part.active {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.ed-part.failing {
+  border-color: var(--fail);
+}
+.ed-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+.ed-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.ed-label {
+  flex: 0 0 66px;
+  color: var(--text-muted);
+}
+.ed-axis {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-faint);
+}
+.ed-axis input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  padding: 3px 3px;
+}
+.ed-row input[type="range"] {
+  flex: 1;
+}
+.ed-actions,
+.ed-history {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+.ed-history select {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ------------------------------------------------------------------ review */

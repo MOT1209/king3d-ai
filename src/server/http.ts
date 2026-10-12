@@ -18,6 +18,9 @@ import { buildFromSpec } from "../pipeline/run.ts";
 import { safeParseSceneSpec } from "../spec/scene-spec.ts";
 import {
   apiCreateGenerativeRun,
+  apiEditRun,
+  apiListRevisions,
+  apiRevertRun,
   apiCreateRun,
   apiGetRun,
   apiListRuns,
@@ -27,6 +30,7 @@ import {
   type AnswerInput,
   type CreateGenerativeRunInput,
   type CreateRunInput,
+  type EditInput,
   type JsonResult,
 } from "./routes.ts";
 import { readRunSummary, runExists, runPaths } from "./runs-list.ts";
@@ -218,6 +222,16 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
 
       if (action === "spec-answer" && method === "POST") {
         return sendJson(res, await apiSpecAnswer(runId, (await readJsonBody(req)) as AnswerInput));
+      }
+      if (action === "edit" && method === "POST") {
+        return sendJson(res, await apiEditRun(runId, (await readJsonBody(req)) as EditInput));
+      }
+      if (action === "revisions" && method === "GET") {
+        return sendJson(res, await apiListRevisions(runId));
+      }
+      if (action === "revert" && method === "POST") {
+        const body = (await readJsonBody(req)) as { rev?: number };
+        return sendJson(res, await apiRevertRun(runId, Number(body?.rev)));
       }
       if (action === "review" && method === "POST") {
         return sendJson(res, await apiRequestReview(runId));

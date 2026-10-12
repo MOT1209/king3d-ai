@@ -10,7 +10,7 @@ Procedural generation in Blender, checked before it's handed over — not a diff
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
 [![Blender](https://img.shields.io/badge/Blender-4.2%2B-F5792A?logo=blender&logoColor=white)](https://www.blender.org)
 [![MCP](https://img.shields.io/badge/MCP-compatible-6E56CF)](docs/mcp-server.md)
-[![Tests](https://img.shields.io/badge/tests-140%20passing-4fd18b)](#testing)
+[![Tests](https://img.shields.io/badge/tests-149%20passing-4fd18b)](#testing)
 [![No API key](https://img.shields.io/badge/AI%20API%20key-not%20required-informational)](#how-it-works)
 [![Generative mode](https://img.shields.io/badge/generative%20mode-TRELLIS.2-6E56CF)](#generative-mode-trellis2--optional)
 
@@ -39,9 +39,10 @@ The pipeline runs end to end: reference image in, verified GLB out.
 | **Viewer** — the exported GLB in a browser | `king3d viewer` | |
 | **Dashboard** — a browser control panel over the whole loop: upload, spec, build (streamed live), report, model, review, repair, rebuild | `king3d web` | [`docs/dashboard.md`](docs/dashboard.md) |
 | **MCP server** — the same pipeline as MCP tools, so any MCP-compatible coding agent (Claude Code, Claude Desktop, Cursor, Windsurf, …) can drive it directly | `node src/mcp/index.ts` | [`docs/mcp-server.md`](docs/mcp-server.md) |
+| **Editor** — click a part in the 3D view, change size, placement or material, rebuild, undo; every edit is a SceneSpec fix, never a scene edit | dashboard → Model tab | [`docs/editor.md`](docs/editor.md) |
 | **Generative mode** *(opt-in)* — a TRELLIS.2 base mesh repaired, decimated and gated into a game-ready GLB; geometry-only, so the path never touches `nvdiffrast` | `king3d gen-trellis` | [`docs/trellis.md`](docs/trellis.md) |
 
-**140 tests pass** — 117 under vitest, 23 inside Blender, including the code paths the dashboard and the MCP server both reuse from the CLI's own pipeline functions.
+**149 tests pass** — 126 under vitest, 23 inside Blender, including the code paths the dashboard and the MCP server both reuse from the CLI's own pipeline functions.
 
 Not built yet: multi-view input, LOD generation, retopology for generative meshes.
 
@@ -213,3 +214,4 @@ docs/
 | [`docs/dashboard.md`](docs/dashboard.md) | The web control panel, its API, and its architecture |
 | [`docs/mcp-server.md`](docs/mcp-server.md) | The MCP tools, how to register them, a worked session |
 | [`docs/trellis.md`](docs/trellis.md) | Generative mode: TRELLIS.2 integration, repair, gates, config |
+| [`docs/editor.md`](docs/editor.md) | The Model-tab editor: edits as spec fixes, revisions, undo, API |

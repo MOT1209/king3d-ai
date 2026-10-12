@@ -9,11 +9,27 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { createEditor } from "/editor.js";
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-const state = { runId: null };
+const state = { runId: null, lastDone: null };
+
+// Edits and review repairs rebuild into a *new* run, so after a rebuild the new
+// run is opened rather than leaving the user looking at the one they replaced.
+const editor = createEditor({
+  api: (...args) => api(...args),
+  toast: (...args) => toast(...args),
+  escapeHtml: (v) => escapeHtml(v),
+  rebuild: rebuildAndOpen,
+});
+
+async function rebuildAndOpen(runId) {
+  switchTab("build");
+  const newId = await streamBuild(`/api/runs/${runId}/rebuild`);
+  if (newId) switchTab("model");
+}
 
 async function api(method, path, body) {
   const opts = { method, headers: {} };
@@ -187,7 +203,7 @@ async function renderRun() {
   renderSpecTab(spec, pending.spec);
   renderBuildTab(summary, report);
   renderReportTab(report);
-  renderModelTab(summary);
+  renderModelTab(summary, spec, report);
   renderReviewTab(spec, repairedSpec, report, pending.review);
 }
 
@@ -276,10 +292,15 @@ async function streamBuild(url) {
         handleSseFrame(frame, log);
       }
     }
+    const doneId = state.lastDone;
+    state.lastDone = null;
     await refreshRunList();
-    await renderRun();
+    if (url.endsWith("/rebuild") && doneId && doneId !== state.runId) await openRun(doneId);
+    else await renderRun();
+    return doneId;
   } catch (e) {
     toast(e.message, true);
+    return null;
   } finally {
     if (startBtn) startBtn.disabled = false;
   }
@@ -307,6 +328,7 @@ function handleSseFrame(frame, log) {
     log.appendChild(row);
     log.scrollTop = log.scrollHeight;
   } else if (event === "done") {
+    state.lastDone = parsed.runId;
     const row = document.createElement("div");
     row.className = "build-done " + (parsed.passed ? "ok" : "fail");
     const icon = parsed.passed ? "icon-check" : "icon-x";
@@ -361,17 +383,17 @@ function renderReportTab(report) {
 
 let viewerScene, viewerCamera, viewerRenderer, viewerControls, viewerModel, viewerAnimating;
 
-function renderModelTab(summary) {
+function renderModelTab(summary, spec, report) {
   const pane = $("#tab-model");
   if (!summary.hasGlb) {
     pane.innerHTML = '<p class="hint">No exported GLB yet.</p>';
     return;
   }
-  pane.innerHTML = `<div id="viewer-stage"></div>`;
-  initViewer(`/api/runs/${state.runId}/files/export/model.glb`);
+  pane.innerHTML = `<div class="editor-layout"><div id="viewer-stage"></div><aside id="editor-panel"></aside></div>`;
+  initViewer(`/api/runs/${state.runId}/files/export/model.glb`, { spec, gates: report?.gates || [] });
 }
 
-function initViewer(glbUrl) {
+function initViewer(glbUrl, editable = {}) {
   const stage = $("#viewer-stage");
   stage.innerHTML = "";
 
@@ -421,6 +443,16 @@ function initViewer(glbUrl) {
       viewerCamera.updateProjectionMatrix();
       viewerControls.target.copy(centre);
       viewerControls.update();
+      editor.attach({
+        scene: viewerScene,
+        camera: viewerCamera,
+        renderer: viewerRenderer,
+        controls: viewerControls,
+        model: viewerModel,
+        spec: editable.spec,
+        gates: editable.gates,
+        runId: state.runId,
+      });
     },
     undefined,
     () => toast("could not load the GLB", true),

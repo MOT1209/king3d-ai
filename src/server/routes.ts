@@ -28,6 +28,7 @@ import {
 } from "../pipeline/review.ts";
 import { newRunId } from "../pipeline/run.ts";
 import { buildFromGenerated } from "../pipeline/generative-run.ts";
+import { applyEdit, listRevisions, revertTo, type EditFix } from "./edit.ts";
 import { parseGenerativeSpec } from "../spec/generative-spec.ts";
 import { AgentInLoopProvider } from "../providers/agent-in-loop.ts";
 import { createReviewProvider } from "../providers/index.ts";
@@ -177,6 +178,35 @@ export async function apiCreateRun(input: CreateRunInput): Promise<JsonResult> {
     const requestText = await requestSpecAnswer(rp, imagePath, context);
     return ok({ runId, status: "needs_spec", request: requestText }, 202);
   });
+}
+
+// ---------------------------------------------------------------- editor
+
+export interface EditInput {
+  fixes: EditFix[];
+}
+
+/** Apply editor edits to the run's working spec. Rebuilding is a separate step. */
+export async function apiEditRun(id: string, input: EditInput): Promise<JsonResult> {
+  return guarded(async () => {
+    const rp = requireRun(id);
+    const result = await applyEdit(rp, input?.fixes ?? []);
+    return ok({
+      rev: result.rev,
+      applied: result.outcome.applied,
+      skipped: result.outcome.skipped,
+      spec: result.outcome.spec,
+    });
+  });
+}
+
+export async function apiListRevisions(id: string): Promise<JsonResult> {
+  return guarded(async () => ok({ revisions: await listRevisions(requireRun(id)) }));
+}
+
+/** rev 0 returns to the originally built spec. */
+export async function apiRevertRun(id: string, rev: number): Promise<JsonResult> {
+  return guarded(async () => ok({ rev, spec: await revertTo(requireRun(id), rev) }));
 }
 
 // ---------------------------------------------------------------- generative mode
