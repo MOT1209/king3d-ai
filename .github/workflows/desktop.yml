@@ -86,6 +86,17 @@ jobs:
             Get-Process | Where-Object { $_.ProcessName -match "King3D|electron|Setup" } | Format-Table Id, ProcessName, StartTime -AutoSize | Out-String | Write-Host
             if (Test-Path $target) { Get-ChildItem $target | Select-Object -First 30 | ForEach-Object { Write-Host $_.Name } }
             if (Test-Path $env:KING3D_DESKTOP_SMOKE_OUT) { Get-Content $env:KING3D_DESKTOP_SMOKE_OUT } else { Write-Host "no smoke output file" }
+            $log = @("King3D", "king3d-desktop") | ForEach-Object { Join-Path $env:APPDATA "$_\logs\server.log" } | Where-Object { Test-Path $_ } | Select-Object -First 1
+            Write-Host "---- server.log ($log)"
+            if ($log) { Get-Content $log -Tail 40 } else { Write-Host "no server.log" }
+            $cli = Join-Path $target "resources\king3d\src\cli\index.ts"
+            Write-Host "---- running the CLI directly ($cli)"
+            if (Test-Path $cli) {
+              $env:ELECTRON_RUN_AS_NODE = "1"
+              $p = Start-Process -FilePath (Join-Path $target "King3D.exe") -ArgumentList $cli, "blender", "status", "--json" -PassThru -NoNewWindow -RedirectStandardOutput "$env:RUNNER_TEMP\cli.out" -RedirectStandardError "$env:RUNNER_TEMP\cli.err"
+              if (-not $p.WaitForExit(60000)) { $p.Kill(); Write-Host "CLI did not finish in 60s" }
+              Get-Content "$env:RUNNER_TEMP\cli.out", "$env:RUNNER_TEMP\cli.err" -ErrorAction SilentlyContinue
+            } else { Write-Host "CLI file missing"; Get-ChildItem (Join-Path $target "resources") -Recurse -Depth 2 | Select-Object -First 40 | ForEach-Object { Write-Host $_.FullName } }
           }
           $installer = Get-ChildItem apps/desktop/dist -Filter "*Setup*.exe" | Select-Object -First 1
           $target = Join-Path $env:RUNNER_TEMP "King3D-installed"
@@ -101,7 +112,7 @@ jobs:
           $app = Start-Process -FilePath $exe -PassThru
           if (-not $app.WaitForExit(120000)) { Show-State "app did not exit in 120s"; Get-Process -Name "King3D" -ErrorAction SilentlyContinue | Stop-Process -Force; exit 1 }
           Get-Content $env:KING3D_DESKTOP_SMOKE_OUT
-          if (-not (Select-String -Path $env:KING3D_DESKTOP_SMOKE_OUT -Pattern "SMOKE_OK" -Quiet)) { exit 1 }
+          if (-not (Select-String -Path $env:KING3D_DESKTOP_SMOKE_OUT -Pattern "SMOKE_OK" -Quiet)) { Show-State "smoke did not report SMOKE_OK"; exit 1 }
       - uses: actions/upload-artifact@v4
         with:
           name: king3d-windows-installer

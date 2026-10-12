@@ -48,10 +48,11 @@ function runCli(args, onEvent = () => undefined) {
       onEvent(e);
     });
     const child = spawn(process.execPath, [CLI, ...args], { env: childEnv(), cwd: ROOT, windowsHide: true });
+    let stderr = ""; // keep the tail so a failure can say why, instead of vanishing
     child.stdout.on("data", (d) => lines.push(d.toString()));
-    child.stderr.on("data", () => undefined);
-    child.on("error", (e) => resolve({ events, code: -1, error: e.message }));
-    child.on("close", (code) => resolve({ events, code }));
+    child.stderr.on("data", (d) => (stderr = (stderr + d.toString()).slice(-2000)));
+    child.on("error", (e) => resolve({ events, code: -1, error: e.message, stderr }));
+    child.on("close", (code) => resolve({ events, code, stderr }));
   });
 }
 
@@ -141,6 +142,8 @@ function looksLikeBlender(file) {
 }
 
 async function pickBlender(reason) {
+  // A modal dialog never returns on an unattended machine (CI): fail with the reason instead.
+  if (SMOKE) throw new Error(reason);
   for (;;) {
     const answer = await dialog.showMessageBox({
       type: "warning", title: "King3D needs Blender", buttons: ["Choose Blender...", "Quit"], defaultId: 0, cancelId: 1,
@@ -162,10 +165,14 @@ async function pickBlender(reason) {
 
 async function ensureBlender() {
   showProgress("Checking Blender...", null);
-  const status = (await runCli(["blender", "status", "--json"])).events.find((e) => e.event === "status");
+  const probe = await runCli(["blender", "status", "--json"]);
+  const status = probe.events.find((e) => e.event === "status");
   if (status && status.in_use) return true;
 
   let failure = status && !status.installable ? "No Blender release is available for automatic install on this system." : "";
+  if (!status) {
+    failure = `The King3D engine did not start (exit ${probe.code}${probe.error ? ", " + probe.error : ""}). ${probe.stderr || ""}`.trim();
+  }
   if (!failure) {
     showProgress("Downloading Blender (first run only)...", 0);
     const result = await runCli(["blender", "install", "--json"], (e) => {
