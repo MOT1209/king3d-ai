@@ -21,6 +21,7 @@ Commands:
   daemon start           Start the persistent Blender daemon
   daemon stop            Stop it
   daemon status          Report whether it is running
+  blender install|status|path   Install and locate the Blender King3D uses
   scene                  Print the current Blender scene as JSON
   gen --image <path>     Full pipeline from a reference image or --prompt
   gen-trellis --image <path>  Generative mode: TRELLIS.2 base mesh -> repair -> gates -> GLB
@@ -178,6 +179,11 @@ async function main(argv: string[]): Promise<number> {
         skipExport: values["no-export"] === true,
         asJson,
       });
+    }
+
+    case "blender": {
+      const { runBlender } = await import("./blender.ts");
+      return runBlender({ action: positionals[1], asJson });
     }
 
     case "gen-trellis": {

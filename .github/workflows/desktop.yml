@@ -1,0 +1,88 @@
+name: desktop
+
+# Builds and smoke-tests the Windows app, and lets CI pin Blender (blender.org is not
+# reachable from every environment, so pinning runs here and is committed from the artifact).
+on:
+  push:
+    branches: [main]
+    paths: ["apps/desktop/**", "src/**", "web/**", "blender/**", "scripts/**", ".github/workflows/desktop.yml", "package*.json"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      pin_blender:
+        description: "Also run `npm run blender:pin` and upload releases.json"
+        type: boolean
+        default: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  pin-blender:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.pin_blender }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm ci
+      - run: npm run blender:pin
+      - run: cat src/integrations/blender/releases.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: releases-json
+          path: src/integrations/blender/releases.json
+
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm ci
+      - name: Install desktop dependencies
+        working-directory: apps/desktop
+        run: npm ci
+      - name: Build the installer
+        working-directory: apps/desktop
+        run: npm run dist
+      - name: Smoke test the shell from source
+        working-directory: apps/desktop
+        env:
+          KING3D_DESKTOP_SMOKE: "1"
+          KING3D_DESKTOP_SMOKE_OUT: ${{ runner.temp }}\smoke-dev.txt
+          KING3D_BLENDER_PATH: ${{ runner.temp }}\fake-blender\blender.exe
+          KING3D_RUNS_DIR: ${{ runner.temp }}\runs-dev
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\fake-blender" | Out-Null
+          New-Item -ItemType File -Force $env:KING3D_BLENDER_PATH | Out-Null
+          npx electron . 
+          Get-Content $env:KING3D_DESKTOP_SMOKE_OUT
+          if (-not (Select-String -Path $env:KING3D_DESKTOP_SMOKE_OUT -Pattern "SMOKE_OK" -Quiet)) { exit 1 }
+      - name: Install silently and smoke test the packaged app
+        shell: pwsh
+        env:
+          KING3D_DESKTOP_SMOKE: "1"
+          KING3D_DESKTOP_SMOKE_OUT: ${{ runner.temp }}\smoke-installed.txt
+          KING3D_BLENDER_PATH: ${{ runner.temp }}\fake-blender\blender.exe
+          KING3D_RUNS_DIR: ${{ runner.temp }}\runs-installed
+        run: |
+          $installer = Get-ChildItem apps/desktop/dist -Filter "*Setup*.exe" | Select-Object -First 1
+          $target = Join-Path $env:RUNNER_TEMP "King3D-installed"
+          Start-Process -FilePath $installer.FullName -ArgumentList "/S", "/D=$target" -Wait
+          Start-Process -FilePath (Join-Path $target "King3D.exe") -Wait
+          Get-Content $env:KING3D_DESKTOP_SMOKE_OUT
+          if (-not (Select-String -Path $env:KING3D_DESKTOP_SMOKE_OUT -Pattern "SMOKE_OK" -Quiet)) { exit 1 }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: king3d-windows-installer
+          path: apps/desktop/dist/*Setup*.exe

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'" />
+<title>King3D settings</title>
+<style>
+  body { margin: 0; padding: 20px; font: 13px system-ui, sans-serif; background: #16181d; color: #eef0f3; }
+  h1 { font-size: 16px; margin: 0 0 4px; } h2 { font-size: 13px; margin: 20px 0 6px; color: #9aa2b1; text-transform: uppercase; letter-spacing: .05em; }
+  label { display: block; margin: 10px 0 3px; color: #9aa2b1; }
+  input, select { width: 100%; box-sizing: border-box; padding: 7px 8px; background: #1c1f26; color: #eef0f3; border: 1px solid #363b47; border-radius: 6px; font: inherit; }
+  .row { display: flex; gap: 8px; } .row input { flex: 1; } button { padding: 7px 14px; background: #6ea8fe; color: #06101f; border: 0; border-radius: 6px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.secondary { background: #272b34; color: #eef0f3; }
+  .hint { color: #656d7d; font-size: 11px; margin-top: 3px; } .err { color: #f2716f; margin-top: 12px; } .ok { color: #4fd18b; margin-top: 12px; }
+  .actions { margin-top: 22px; display: flex; gap: 10px; align-items: center; }
+</style></head>
+<body>
+  <h1>Settings</h1>
+  <p class="hint">Saved on this computer. The AI key is encrypted with your Windows account (DPAPI) and is never shown again.</p>
+
+  <h2>AI model (optional)</h2>
+  <label for="provider">Provider</label>
+  <select id="provider">
+    <option value="agent">None (the agent driving King3D answers)</option>
+    <option value="anthropic">Claude (Anthropic)</option>
+    <option value="openai-compatible">OpenAI-compatible (OpenAI, OpenRouter, Ollama, ...)</option>
+  </select>
+  <label for="model">Model</label><input id="model" placeholder="e.g. claude-opus-5-5" />
+  <label for="baseUrl">Base URL</label><input id="baseUrl" placeholder="required for OpenAI-compatible, e.g. http://127.0.0.1:11434/v1" />
+  <label for="apiKey">API key</label><input id="apiKey" type="password" autocomplete="off" />
+  <div class="hint" id="keyHint"></div>
+
+  <h2>Mesh generators</h2>
+  <label for="trellis">TRELLIS.2 service URL</label><input id="trellis" placeholder="http://127.0.0.1:8900" />
+  <label for="hunyuan">Hunyuan3D service URL (not licensed in the EU, UK, South Korea)</label><input id="hunyuan" placeholder="leave empty to keep it off" />
+
+  <h2>Blender</h2>
+  <label for="blender">Path to blender / blender.exe</label>
+  <div class="row"><input id="blender" placeholder="empty = use the copy King3D installed" /><button class="secondary" id="choose" type="button">Browse...</button></div>
+
+  <div class="actions"><button id="save" type="button">Save and restart</button><span id="status"></span></div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  let keySet = false;
+  async function load() {
+    const s = await window.king3dSettings.get();
+    $("provider").value = s.llmProvider || "agent"; $("model").value = s.llmModel || ""; $("baseUrl").value = s.llmBaseUrl || "";
+    $("trellis").value = s.trellisUrl || ""; $("hunyuan").value = s.hunyuan3dUrl || ""; $("blender").value = s.blenderPath || "";
+    keySet = s.apiKeySet; $("keyHint").textContent = keySet ? "A key is stored. Leave this empty to keep it, type a new one to replace it." : "No key stored.";
+  }
+  $("choose").onclick = async () => { const p = await window.king3dSettings.chooseBlender(); if (p) $("blender").value = p; };
+  $("save").onclick = async () => {
+    const status = $("status"); status.className = ""; status.textContent = "Saving...";
+    const res = await window.king3dSettings.save({
+      llmProvider: $("provider").value, llmModel: $("model").value, llmBaseUrl: $("baseUrl").value,
+      trellisUrl: $("trellis").value, hunyuan3dUrl: $("hunyuan").value, blenderPath: $("blender").value, apiKey: $("apiKey").value,
+    });
+    if (res.ok) { status.className = "ok"; status.textContent = "Saved. Restarting..."; $("apiKey").value = ""; await load(); }
+    else { status.className = "err"; status.textContent = res.errors.join(" "); }
+  };
+  load();
+</script></body></html>

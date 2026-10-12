@@ -1,0 +1,25 @@
+{
+  "name": "king3d-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "King3D desktop shell (Electron): runs the dashboard locally and manages Blender.",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "stage": "node scripts/stage.mjs",
+    "dist": "npm run stage && electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.king3d.studio",
+    "productName": "King3D",
+    "directories": { "output": "dist" },
+    "files": ["main.cjs", "preload.cjs", "lib.cjs", "settings.html", "progress.html", "package.json"],
+    "extraResources": [{ "from": "stage", "to": "king3d" }],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true }
+  }
+}

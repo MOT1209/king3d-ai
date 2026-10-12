@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { Ai3dError } from "./errors.ts";
+import { managedBlenderPath } from "./home.ts";
 
 /** Walk up from this file until the directory containing package.json is found. */
 function findProjectRoot(): string {
@@ -23,7 +24,8 @@ export const paths = {
   blenderLib: join(PROJECT_ROOT, "blender", "lib"),
   blenderAddon: join(PROJECT_ROOT, "blender", "addon", "ai3d_bridge"),
   blenderTests: join(PROJECT_ROOT, "blender", "tests", "run_tests.py"),
-  runs: join(PROJECT_ROOT, "runs"),
+  // An installed app cannot write beside its own files, so the desktop app points this at a user directory.
+  runs: process.env["KING3D_RUNS_DIR"] ? resolve(process.env["KING3D_RUNS_DIR"]) : join(PROJECT_ROOT, "runs"),
   inputs: join(PROJECT_ROOT, "inputs"),
   fixtures: join(PROJECT_ROOT, "tests", "fixtures"),
   viewer: join(PROJECT_ROOT, "viewer"),
@@ -56,7 +58,7 @@ function compareVersionDesc(a: string, b: string): number {
 
 /**
  * Locate the Blender executable.
- * Order: KING3D_BLENDER_PATH -> platform install roots (newest version) -> PATH.
+ * Order: KING3D_BLENDER_PATH -> Blender installed by King3D -> platform install roots (newest) -> PATH.
  * Returns null instead of throwing so `doctor` can report a clean diagnosis.
  */
 export function findBlenderExecutable(): string | null {
@@ -67,6 +69,11 @@ export function findBlenderExecutable(): string | null {
       path: override,
     });
   }
+
+  // A Blender that King3D installed itself (`king3d blender install`) comes before system copies,
+  // so the version it was tested against is the one that runs.
+  const managed = managedBlenderPath();
+  if (managed) return managed;
 
   if (process.platform === "win32") {
     for (const root of WINDOWS_BLENDER_ROOTS) {

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'" />
+<title>King3D</title>
+<style>
+  body { margin: 0; font: 14px system-ui, sans-serif; background: #16181d; color: #eef0f3; display: grid; place-items: center; height: 100vh; }
+  main { width: 320px; text-align: center; }
+  h1 { font-size: 18px; margin: 0 0 14px; }
+  .bar { height: 6px; background: #272b34; border-radius: 3px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: #6ea8fe; transition: width .2s; }
+  .bar.indeterminate > i { width: 40%; animation: slide 1.2s infinite ease-in-out; }
+  @keyframes slide { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+  p { color: #9aa2b1; font-size: 12px; min-height: 1.4em; }
+</style></head>
+<body><main>
+  <h1>King3D</h1>
+  <div class="bar indeterminate" id="bar"><i id="fill"></i></div>
+  <p id="msg">Starting...</p>
+</main></body></html>

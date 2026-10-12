@@ -10,7 +10,7 @@ Procedural generation in Blender, checked before it's handed over — not a diff
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
 [![Blender](https://img.shields.io/badge/Blender-4.2%2B-F5792A?logo=blender&logoColor=white)](https://www.blender.org)
 [![MCP](https://img.shields.io/badge/MCP-compatible-6E56CF)](docs/mcp-server.md)
-[![Tests](https://img.shields.io/badge/tests-180%20passing-4fd18b)](#testing)
+[![Tests](https://img.shields.io/badge/tests-219%20passing-4fd18b)](#testing)
 [![No API key](https://img.shields.io/badge/AI%20API%20key-not%20required-informational)](#how-it-works)
 [![Generative mode](https://img.shields.io/badge/generative%20mode-TRELLIS.2-6E56CF)](#generative-mode-trellis2--optional)
 
@@ -39,12 +39,14 @@ The pipeline runs end to end: reference image in, verified GLB out.
 | **Viewer** — the exported GLB in a browser | `king3d viewer` | |
 | **Dashboard** — a browser control panel over the whole loop: upload, spec, build (streamed live), report, model, review, repair, rebuild | `king3d web` | [`docs/dashboard.md`](docs/dashboard.md) |
 | **MCP server** — the same pipeline as MCP tools, so any MCP-compatible coding agent (Claude Code, Claude Desktop, Cursor, Windsurf, …) can drive it directly | `node src/mcp/index.ts` | [`docs/mcp-server.md`](docs/mcp-server.md) |
-| **Editor** — click a part in the 3D view, change size, placement or material, rebuild, undo; every edit is a SceneSpec fix, never a scene edit | dashboard → Model tab | [`docs/ai.md`](docs/ai.md) | In-app AI: providers, configuration, what a model may change, security |
+| **Editor** — click a part in the 3D view, change size, placement or material, rebuild, undo; every edit is a SceneSpec fix, never a scene edit | dashboard → Model tab | [`docs/desktop.md`](docs/desktop.md) | The Windows app: Blender install + pinning, settings, build, what is verified |
+| [`docs/ai.md`](docs/ai.md) | In-app AI: providers, configuration, what a model may change, security |
 | [`docs/editor.md`](docs/editor.md) |
+| **Windows app** — Electron shell that runs the dashboard locally, installs a checksum-verified Blender on first run, keeps the AI key in DPAPI | `apps/desktop` | [`docs/desktop.md`](docs/desktop.md) |
 | **In-app AI** *(opt-in)* — ask a model to edit the object in plain words; works with Claude, any OpenAI-compatible server (OpenAI, OpenRouter, Gemini, Ollama), proposals are reviewed before they apply | `KING3D_LLM_PROVIDER` | [`docs/ai.md`](docs/ai.md) |
 | **Generative mode** *(opt-in)* — a TRELLIS.2 (or, optionally, Hunyuan3D) base mesh repaired, decimated and gated into a game-ready GLB; geometry-only, so the path never touches `nvdiffrast` | `king3d gen-trellis` | [`docs/trellis.md`](docs/trellis.md) |
 
-**180 tests pass** — 157 under vitest, 23 inside Blender, including the code paths the dashboard and the MCP server both reuse from the CLI's own pipeline functions.
+**219 tests pass** — 196 under vitest, 23 inside Blender, including the code paths the dashboard and the MCP server both reuse from the CLI's own pipeline functions.
 
 Not built yet: multi-view input, LOD generation, retopology for generative meshes.
 

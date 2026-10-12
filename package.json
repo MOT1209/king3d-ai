@@ -20,7 +20,8 @@
     "test:blender": "node src/cli/index.ts test:blender",
     "bench": "node src/cli/index.ts bench",
     "web": "node src/cli/index.ts web",
-    "mcp": "node src/mcp/index.ts"
+    "mcp": "node src/mcp/index.ts",
+    "blender:pin": "node scripts/pin-blender.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

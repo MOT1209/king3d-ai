@@ -20,7 +20,8 @@ export type Ai3dErrorCode =
   | "TRELLIS_GENERATE_FAILED"
   | "LLM_UNAVAILABLE"
   | "LLM_FAILED"
-  | "LLM_INVALID_OUTPUT";
+  | "LLM_INVALID_OUTPUT"
+  | "BLENDER_INSTALL_FAILED";
 
 export class Ai3dError extends Error {
   readonly code: Ai3dErrorCode;
