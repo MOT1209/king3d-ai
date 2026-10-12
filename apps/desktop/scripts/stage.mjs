@@ -8,9 +8,13 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..", "..", "..");
-const stage = resolve(here, "..", "stage");
+// electron-builder drops a node_modules that sits at the ROOT of an extraResources directory
+// (util/filter.js: `relative === "node_modules"` -> false) but keeps nested ones. So the server is staged
+// one level down, in stage/king3d, and shipped with `to: "."`; otherwise the installed app has no zod.
+const staged = resolve(here, "..", "stage");
+const stage = join(staged, "king3d");
 
-rmSync(stage, { recursive: true, force: true });
+rmSync(staged, { recursive: true, force: true });
 mkdirSync(stage, { recursive: true });
 
 const skip = (src) => !/(__pycache__|[\\/]tests[\\/]?$|\.pyc$)/.test(src);

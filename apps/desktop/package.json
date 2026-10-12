@@ -18,7 +18,7 @@
     "productName": "King3D",
     "directories": { "output": "dist" },
     "files": ["main.cjs", "preload.cjs", "lib.cjs", "settings.html", "progress.html", "package.json"],
-    "extraResources": [{ "from": "stage", "to": "king3d" }],
+    "extraResources": [{ "from": "stage", "to": "." }],
     "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
     "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true }
   }
