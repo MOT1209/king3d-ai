@@ -145,6 +145,15 @@ export type ReviewProvider = "agent" | "deterministic";
  */
 export type TrellisMode = "http" | "mock";
 
+/**
+ * Which language model answers the judgement stages and the editor's AI chat.
+ * "agent": none - the agent driving the session answers (the default; no key).
+ * "anthropic": Claude through the official SDK.
+ * "openai-compatible": any server speaking the OpenAI chat-completions protocol
+ *   - OpenAI, OpenRouter, Gemini's compatibility endpoint, Ollama, LM Studio, ...
+ */
+export type LlmProviderKind = "agent" | "anthropic" | "openai-compatible";
+
 export interface Ai3dConfig {
   backend: BackendKind;
   bridgeHost: string;
@@ -163,6 +172,14 @@ export interface Ai3dConfig {
   trellisTimeoutMs: number;
   /** Fixture GLB returned by the mock provider; defaults to a test fixture. */
   trellisMockGlb?: string;
+  /** Language model provider for in-app AI. "agent" means none is configured. */
+  llmProvider: LlmProviderKind;
+  /** Model id; defaults per provider (required for openai-compatible). */
+  llmModel?: string;
+  /** API base URL; required for openai-compatible, optional override for anthropic. */
+  llmBaseUrl?: string;
+  /** Secret. Never logged, never returned by any API route. */
+  llmApiKey?: string;
 }
 
 export function loadConfig(overrides: Partial<Ai3dConfig> = {}): Ai3dConfig {
@@ -184,8 +201,24 @@ export function loadConfig(overrides: Partial<Ai3dConfig> = {}): Ai3dConfig {
     trellisUrl: process.env["KING3D_TRELLIS_URL"] ?? "http://127.0.0.1:8900",
     trellisTimeoutMs: envInt("KING3D_TRELLIS_TIMEOUT_MS", 300_000),
     ...(process.env["KING3D_TRELLIS_MOCK_GLB"] ? { trellisMockGlb: process.env["KING3D_TRELLIS_MOCK_GLB"] } : {}),
+    llmProvider: parseLlmProvider(process.env["KING3D_LLM_PROVIDER"]),
+    ...(process.env["KING3D_LLM_MODEL"] ? { llmModel: process.env["KING3D_LLM_MODEL"] } : {}),
+    ...(process.env["KING3D_LLM_BASE_URL"] ? { llmBaseUrl: process.env["KING3D_LLM_BASE_URL"] } : {}),
+    ...(process.env["KING3D_LLM_API_KEY"] ? { llmApiKey: process.env["KING3D_LLM_API_KEY"] } : {}),
     ...overrides,
   };
+}
+
+function parseLlmProvider(raw: string | undefined): LlmProviderKind {
+  if (raw === undefined || raw === "") return "agent";
+  const lowered = raw.toLowerCase();
+  if (lowered !== "agent" && lowered !== "anthropic" && lowered !== "openai-compatible") {
+    throw new Ai3dError(
+      "CONFIG_INVALID",
+      `KING3D_LLM_PROVIDER must be "agent", "anthropic" or "openai-compatible", got "${raw}"`,
+    );
+  }
+  return lowered;
 }
 
 function parseTrellisMode(raw: string | undefined): TrellisMode {

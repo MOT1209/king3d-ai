@@ -42,6 +42,10 @@ kept, so redo is a revert to a higher number.
 | `GET /api/runs/:id/revisions` | — | `{ revisions: [{ rev, created_at, fixes }] }` |
 | `POST /api/runs/:id/revert` | `{ rev }` (0 = built spec) | `{ rev, spec }` |
 
+## Ask AI
+With a model configured ([`docs/ai.md`](ai.md)), the panel has an **Ask AI** box. The model
+proposes fixes; you review them, add them to pending, and apply as usual.
+
 ## Limits (v1)
 - Generative (TRELLIS) runs can be viewed, not edited: they have no components.
 - A material shared by several parts changes all of them.

@@ -29,6 +29,10 @@ import {
 import { newRunId } from "../pipeline/run.ts";
 import { buildFromGenerated } from "../pipeline/generative-run.ts";
 import { applyEdit, listRevisions, revertTo, type EditFix } from "./edit.ts";
+import { proposeEdit } from "./ai-edit.ts";
+import { createChatClient, llmStatus } from "../providers/llm/index.ts";
+import { LlmModelProvider } from "../providers/llm/llm-provider.ts";
+import type { ModelProvider } from "../providers/provider.ts";
 import { parseGenerativeSpec } from "../spec/generative-spec.ts";
 import { AgentInLoopProvider } from "../providers/agent-in-loop.ts";
 import { createReviewProvider } from "../providers/index.ts";
@@ -55,7 +59,9 @@ function errorResult(e: unknown): JsonResult {
             e.code === "CONFIG_INVALID" ||
             e.code === "RUN_STATE_INVALID"
           ? 400
-          : 500;
+          : e.code === "LLM_UNAVAILABLE" || e.code === "LLM_FAILED" || e.code === "LLM_INVALID_OUTPUT"
+            ? 502
+            : 500;
     return ok({ error: e.code, message: e.message, details: e.details }, status);
   }
   return ok({ error: "INTERNAL", message: errorMessage(e) }, 500);
@@ -207,6 +213,43 @@ export async function apiListRevisions(id: string): Promise<JsonResult> {
 /** rev 0 returns to the originally built spec. */
 export async function apiRevertRun(id: string, rev: number): Promise<JsonResult> {
   return guarded(async () => ok({ rev, spec: await revertTo(requireRun(id), rev) }));
+}
+
+/** Which in-app model is configured. Never includes the key. */
+export async function apiLlmStatus(): Promise<JsonResult> {
+  return guarded(async () => ok(llmStatus(loadConfig())));
+}
+
+export interface AiEditInput {
+  instruction: string;
+}
+
+/**
+ * Ask the configured model to propose edits for a run. Returns a proposal only;
+ * nothing is written until the person applies it through /edit.
+ * `deps.provider` lets tests substitute a fake model.
+ */
+export async function apiAiEdit(
+  id: string,
+  input: AiEditInput,
+  deps: { provider?: ModelProvider } = {},
+): Promise<JsonResult> {
+  return guarded(async () => {
+    const rp = requireRun(id);
+    let provider = deps.provider;
+    if (!provider) {
+      const client = createChatClient(loadConfig());
+      if (!client) {
+        throw new Ai3dError(
+          "CONFIG_INVALID",
+          "no AI model is configured. Set KING3D_LLM_PROVIDER (anthropic or openai-compatible) and its key; see docs/ai.md",
+        );
+      }
+      provider = new LlmModelProvider(client);
+    }
+    const proposal = await proposeEdit(rp, input?.instruction ?? "", provider);
+    return ok({ ...proposal, model: provider.name });
+  });
 }
 
 // ---------------------------------------------------------------- generative mode

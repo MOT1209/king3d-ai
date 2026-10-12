@@ -17,7 +17,10 @@ export type Ai3dErrorCode =
   | "RUN_STATE_INVALID"
   | "CONFIG_INVALID"
   | "TRELLIS_UNAVAILABLE"
-  | "TRELLIS_GENERATE_FAILED";
+  | "TRELLIS_GENERATE_FAILED"
+  | "LLM_UNAVAILABLE"
+  | "LLM_FAILED"
+  | "LLM_INVALID_OUTPUT";
 
 export class Ai3dError extends Error {
   readonly code: Ai3dErrorCode;

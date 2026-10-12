@@ -17,6 +17,8 @@ import { createLogger } from "../core/logger.ts";
 import { buildFromSpec } from "../pipeline/run.ts";
 import { safeParseSceneSpec } from "../spec/scene-spec.ts";
 import {
+  apiAiEdit,
+  apiLlmStatus,
   apiCreateGenerativeRun,
   apiEditRun,
   apiListRevisions,
@@ -28,6 +30,7 @@ import {
   apiReviewAnswer,
   apiSpecAnswer,
   type AnswerInput,
+  type AiEditInput,
   type CreateGenerativeRunInput,
   type CreateRunInput,
   type EditInput,
@@ -207,6 +210,10 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       if (method === "POST") return sendJson(res, await apiCreateRun((await readJsonBody(req)) as CreateRunInput));
     }
 
+    if (parts[1] === "llm" && parts.length === 2 && method === "GET") {
+      return sendJson(res, await apiLlmStatus());
+    }
+
     // Generative mode (TRELLIS.2): one synchronous call, no spec/review loop.
     if (parts[1] === "generate" && parts.length === 2 && method === "POST") {
       return sendJson(res, await apiCreateGenerativeRun((await readJsonBody(req)) as CreateGenerativeRunInput));
@@ -225,6 +232,9 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       }
       if (action === "edit" && method === "POST") {
         return sendJson(res, await apiEditRun(runId, (await readJsonBody(req)) as EditInput));
+      }
+      if (action === "ai-edit" && method === "POST") {
+        return sendJson(res, await apiAiEdit(runId, (await readJsonBody(req)) as AiEditInput));
       }
       if (action === "revisions" && method === "GET") {
         return sendJson(res, await apiListRevisions(runId));

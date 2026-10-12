@@ -793,6 +793,36 @@ button:disabled {
 .ed-row input[type="range"] {
   flex: 1;
 }
+.ed-ai {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+.ed-ai textarea {
+  width: 100%;
+  resize: vertical;
+  font-size: 12px;
+}
+.ed-model {
+  color: var(--text-faint);
+  font-weight: 400;
+  font-size: 11px;
+}
+.ed-proposal {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ed-proposal li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
 .ed-actions,
 .ed-history {
   display: flex;

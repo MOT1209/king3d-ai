@@ -47,6 +47,8 @@ export function createEditor({ api, toast, escapeHtml, rebuild }) {
   let pending = new Map(); // path -> value
   let outline = null;
   const failOutlines = [];
+  let llm = { configured: false, provider: "agent", model: null };
+  let ai = { busy: false, proposal: null, error: null, text: "" };
 
   const componentOf = (id) => ctx?.spec?.components?.find((c) => c.id === id);
   const materialOf = (id) => ctx?.spec?.materials?.find((m) => m.id === id);
@@ -124,6 +126,16 @@ export function createEditor({ api, toast, escapeHtml, rebuild }) {
     drawOutlines();
     render();
     refreshRevisions();
+    refreshLlm();
+  }
+
+  async function refreshLlm() {
+    try {
+      llm = (await api("GET", "/api/llm")).data;
+    } catch {
+      llm = { configured: false, provider: "agent", model: null };
+    }
+    render();
   }
 
   function detach() {
@@ -193,6 +205,8 @@ export function createEditor({ api, toast, escapeHtml, rebuild }) {
       html += `</div>`;
     }
 
+    html += aiBox();
+
     html += `<div class="ed-actions">
       <button type="button" id="ed-apply" ${pending.size ? "" : "disabled"}>Apply &amp; rebuild${pending.size ? ` (${pending.size})` : ""}</button>
       <button type="button" id="ed-discard" ${pending.size ? "" : "disabled"}>Discard</button>
@@ -205,7 +219,63 @@ export function createEditor({ api, toast, escapeHtml, rebuild }) {
     fillRevisions();
   }
 
+  function pathLabel(path) {
+    const part = path.split(".");
+    if (part[0] === "components") return `${part[1]} ${part[2].replace("_m", "").replace("_deg", "")}`;
+    if (part[0] === "materials") return `${part[1]} ${part[2]}`;
+    return path;
+  }
+
+  function aiBox() {
+    if (!llm.configured) {
+      return `<div class="ed-ai"><h4>Ask AI</h4><p class="hint">No AI model is configured. Set <code>KING3D_LLM_PROVIDER</code> (see docs/ai.md) and restart the dashboard.</p></div>`;
+    }
+    let out = `<div class="ed-ai"><h4>Ask AI <span class="ed-model">${escapeHtml(llm.model || "")}</span></h4>
+      <textarea id="ed-ai-text" rows="2" placeholder="e.g. make the handle 20% wider and the mug matte black">${escapeHtml(ai.text)}</textarea>
+      <button type="button" id="ed-ai-ask" ${ai.busy ? "disabled" : ""}>${ai.busy ? "Thinking…" : "Propose edit"}</button>`;
+    if (ai.error) out += `<p class="ed-fail">${escapeHtml(ai.error)}</p>`;
+    if (ai.proposal) {
+      const p = ai.proposal;
+      out += `<p class="hint">${escapeHtml(p.explanation)}</p>`;
+      if (p.fixes.length) {
+        out += `<ul class="ed-proposal">${p.fixes
+          .map((f) => `<li><span>${escapeHtml(pathLabel(f.path))}</span><code>${escapeHtml(JSON.stringify(f.value))}</code></li>`)
+          .join("")}</ul>
+          <button type="button" id="ed-ai-accept">Add ${p.fixes.length} change(s) to pending</button>`;
+      }
+      if (p.skipped?.length) {
+        out += `<p class="hint">Ignored ${p.skipped.length} change(s) that cannot apply: ${p.skipped
+          .map((x) => escapeHtml(pathLabel(x.path)))
+          .join(", ")}.</p>`;
+      }
+    }
+    return out + `</div>`;
+  }
+
+  async function askAi() {
+    const text = document.getElementById("ed-ai-text")?.value.trim() ?? "";
+    ai = { busy: true, proposal: null, error: null, text };
+    render();
+    try {
+      ai.proposal = (await api("POST", `/api/runs/${ctx.runId}/ai-edit`, { instruction: text })).data;
+    } catch (e) {
+      ai.error = e.message;
+    }
+    ai.busy = false;
+    render();
+  }
+
+  function acceptAi() {
+    for (const fix of ai.proposal.fixes) pending.set(fix.path, fix.value);
+    ai.proposal = null;
+    toast("added to pending - review the values, then Apply & rebuild");
+    render();
+  }
+
   function wire(panel) {
+    panel.querySelector("#ed-ai-text")?.addEventListener("input", (e) => (ai.text = e.target.value));
+    panel.querySelector("#ed-ai-ask")?.addEventListener("click", askAi);
+    panel.querySelector("#ed-ai-accept")?.addEventListener("click", acceptAi);
     panel.querySelectorAll("[data-part]").forEach((b) => b.addEventListener("click", () => select(b.dataset.part)));
 
     panel.querySelectorAll("input[data-path]").forEach((input) =>
