@@ -38,7 +38,7 @@ export const RepairRecipe = z.object({
 export type RepairRecipe = z.infer<typeof RepairRecipe>;
 
 export const GeneratorInfo = z.object({
-  name: z.literal("trellis2"),
+  name: z.enum(["trellis2", "hunyuan3d"]),
   model: z.string().default("4B"),
   /** Recorded for provenance; which inference endpoint produced the mesh. */
   base_url: z.string().optional(),

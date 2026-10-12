@@ -98,11 +98,14 @@
             <svg class="icon" aria-hidden="true"><use href="#icon-plus-circle" /></svg>
             Create run
           </button>
+          <label class="field-label" for="new-generator">Generator</label>
+          <select id="new-generator"><option value="trellis2">TRELLIS.2</option></select>
+          <span class="field-hint" id="generator-hint" hidden></span>
           <button type="button" id="new-generate-submit" class="btn btn-secondary">
             <svg class="icon" aria-hidden="true"><use href="#icon-cube" /></svg>
-            Generate (TRELLIS.2)
+            Generate
           </button>
-          <span class="field-hint">Generative mode runs in one step via TRELLIS.2 — needs the inference service (or mock).</span>
+          <span class="field-hint">Generative mode runs in one step and needs the generator service (or the TRELLIS mock).</span>
         </form>
 
         <h2 class="section-label">Runs</h2>

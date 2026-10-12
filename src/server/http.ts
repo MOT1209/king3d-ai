@@ -18,6 +18,7 @@ import { buildFromSpec } from "../pipeline/run.ts";
 import { safeParseSceneSpec } from "../spec/scene-spec.ts";
 import {
   apiAiEdit,
+  apiGenerators,
   apiLlmStatus,
   apiCreateGenerativeRun,
   apiEditRun,
@@ -210,6 +211,9 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       if (method === "POST") return sendJson(res, await apiCreateRun((await readJsonBody(req)) as CreateRunInput));
     }
 
+    if (parts[1] === "generators" && parts.length === 2 && method === "GET") {
+      return sendJson(res, await apiGenerators());
+    }
     if (parts[1] === "llm" && parts.length === 2 && method === "GET") {
       return sendJson(res, await apiLlmStatus());
     }

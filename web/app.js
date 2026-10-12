@@ -140,6 +140,29 @@ function fileToBase64(file) {
   });
 }
 
+// Fill the generator list from the server so a generator that is not set up is
+// shown disabled, and one with a licence caveat says so before it is used.
+let generators = [];
+async function loadGenerators() {
+  try {
+    generators = (await api("GET", "/api/generators")).data.generators;
+  } catch {
+    return; // keep the static TRELLIS.2 option
+  }
+  const select = $("#new-generator");
+  select.innerHTML = generators
+    .map((g) => `<option value="${g.name}" ${g.configured ? "" : "disabled"}>${escapeHtml(g.label)}${g.configured ? "" : " (not configured)"}</option>`)
+    .join("");
+  select.addEventListener("change", showGeneratorHint);
+  showGeneratorHint();
+}
+function showGeneratorHint() {
+  const g = generators.find((x) => x.name === $("#new-generator").value);
+  const hint = $("#generator-hint");
+  hint.hidden = !g?.restriction;
+  hint.textContent = g?.restriction ?? "";
+}
+
 // Generative mode: one synchronous call (generate -> repair -> gates), no spec
 // or review loop. The pipeline runs server-side, so this request can take a
 // while; keep the button disabled until it returns.
@@ -153,7 +176,7 @@ async function submitGenerate() {
     return;
   }
 
-  const body = {};
+  const body = { generator: $("#new-generator").value };
   if (prompt) body.prompt = prompt;
   if (file) {
     body.imageBase64 = await fileToBase64(file);
@@ -164,7 +187,7 @@ async function submitGenerate() {
   const original = btn.innerHTML;
   btn.disabled = true;
   btn.textContent = "Generating…";
-  toast("generating via TRELLIS.2 — this can take a while");
+  toast(`generating via ${$("#new-generator").selectedOptions[0]?.textContent ?? "the generator"} - this can take a while`);
   try {
     const { data } = await api("POST", "/api/generate", body);
     toast(`run ${data.runId} ${data.passed ? "passed" : "finished"} the gates`, !data.passed);
@@ -552,6 +575,7 @@ function switchTab(name) {
 document.addEventListener("DOMContentLoaded", () => {
   $("#new-run-form").addEventListener("submit", submitNewRun);
   $("#new-generate-submit").addEventListener("click", submitGenerate);
+  loadGenerators();
   $("#new-image").addEventListener("change", (e) => {
     const file = e.target.files[0];
     const preview = $("#image-preview");

@@ -172,6 +172,8 @@ export interface Ai3dConfig {
   trellisTimeoutMs: number;
   /** Fixture GLB returned by the mock provider; defaults to a test fixture. */
   trellisMockGlb?: string;
+  /** Base URL of a user-supplied Hunyuan3D service; unset means the generator is off. */
+  hunyuan3dUrl?: string;
   /** Language model provider for in-app AI. "agent" means none is configured. */
   llmProvider: LlmProviderKind;
   /** Model id; defaults per provider (required for openai-compatible). */
@@ -201,6 +203,7 @@ export function loadConfig(overrides: Partial<Ai3dConfig> = {}): Ai3dConfig {
     trellisUrl: process.env["KING3D_TRELLIS_URL"] ?? "http://127.0.0.1:8900",
     trellisTimeoutMs: envInt("KING3D_TRELLIS_TIMEOUT_MS", 300_000),
     ...(process.env["KING3D_TRELLIS_MOCK_GLB"] ? { trellisMockGlb: process.env["KING3D_TRELLIS_MOCK_GLB"] } : {}),
+    ...(process.env["KING3D_GEN_HUNYUAN3D_URL"] ? { hunyuan3dUrl: process.env["KING3D_GEN_HUNYUAN3D_URL"] } : {}),
     llmProvider: parseLlmProvider(process.env["KING3D_LLM_PROVIDER"]),
     ...(process.env["KING3D_LLM_MODEL"] ? { llmModel: process.env["KING3D_LLM_MODEL"] } : {}),
     ...(process.env["KING3D_LLM_BASE_URL"] ? { llmBaseUrl: process.env["KING3D_LLM_BASE_URL"] } : {}),

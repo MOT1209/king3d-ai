@@ -483,6 +483,10 @@ const GenerateInputSchema = z
       .describe("Path to a local reference image (PNG/JPEG), absolute or relative to the project root."),
     prompt: z.string().optional().describe("A text description of the object, used instead of or alongside an image."),
     name: z.string().optional().describe("Name for the generated object; defaults to the prompt."),
+    generator: z
+      .enum(["trellis2", "hunyuan3d"])
+      .optional()
+      .describe("Mesh generator; defaults to trellis2. hunyuan3d is opt-in and its licence excludes the EU, UK and South Korea."),
   })
   .strict();
 
@@ -517,6 +521,7 @@ Returns JSON: { runId, mode: "generative", passed, scores, gates, exported }`,
       const result = await apiCreateGenerativeRun({
         ...(params.prompt ? { prompt: params.prompt } : {}),
         ...(params.name ? { name: params.name } : {}),
+        ...(params.generator ? { generator: params.generator } : {}),
         ...(image ? { imageBase64: image.base64, imageName: image.name } : {}),
       });
       return toToolResult(result);

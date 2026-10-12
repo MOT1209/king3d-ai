@@ -28,6 +28,7 @@ import {
 } from "../pipeline/review.ts";
 import { newRunId } from "../pipeline/run.ts";
 import { buildFromGenerated } from "../pipeline/generative-run.ts";
+import { acquireMeshGen, generatorInfo, isGeneratorName, listGenerators } from "../integrations/meshgen/index.ts";
 import { applyEdit, listRevisions, revertTo, type EditFix } from "./edit.ts";
 import { proposeEdit } from "./ai-edit.ts";
 import { createChatClient, llmStatus } from "../providers/llm/index.ts";
@@ -215,6 +216,11 @@ export async function apiRevertRun(id: string, rev: number): Promise<JsonResult>
   return guarded(async () => ok({ rev, spec: await revertTo(requireRun(id), rev) }));
 }
 
+/** The mesh generators King3D knows, and whether each is set up. No secrets. */
+export async function apiGenerators(): Promise<JsonResult> {
+  return guarded(async () => ok({ generators: listGenerators(loadConfig()) }));
+}
+
 /** Which in-app model is configured. Never includes the key. */
 export async function apiLlmStatus(): Promise<JsonResult> {
   return guarded(async () => ok(llmStatus(loadConfig())));
@@ -255,6 +261,8 @@ export async function apiAiEdit(
 // ---------------------------------------------------------------- generative mode
 
 export interface CreateGenerativeRunInput {
+  /** Which mesh generator to use; defaults to trellis2. */
+  generator?: string;
   prompt?: string;
   name?: string;
   imageBase64?: string;
@@ -271,6 +279,14 @@ export async function apiCreateGenerativeRun(input: CreateGenerativeRunInput): P
     if (!input.prompt && !input.imageBase64) {
       throw new Ai3dError("CONFIG_INVALID", "a generative run needs an image or a text prompt");
     }
+    const generator = input.generator ?? "trellis2";
+    if (!isGeneratorName(generator)) {
+      throw new Ai3dError("CONFIG_INVALID", `unknown generator "${generator}"`, { generator });
+    }
+    const info = generatorInfo(generator);
+    // Resolve the provider first: an unconfigured generator must fail before a run directory exists.
+    const provider = acquireMeshGen(loadConfig(), generator);
+
     const runId = newRunId("gen");
     const rp = runPaths(runId);
     await mkdir(rp.dir, { recursive: true });
@@ -290,11 +306,11 @@ export async function apiCreateGenerativeRun(input: CreateGenerativeRunInput): P
         ...(imageName ? { image: imageName } : {}),
         ...(input.prompt ? { prompt: input.prompt } : {}),
       },
-      generator: { name: "trellis2", model: "4B" },
+      generator: { name: info.name, model: info.model },
       object: { name: objectName, category: "generated" },
     });
 
-    const result = await buildFromGenerated(spec, { runId });
+    const result = await buildFromGenerated(spec, { runId, provider });
     return ok({
       runId: result.runId,
       mode: "generative",

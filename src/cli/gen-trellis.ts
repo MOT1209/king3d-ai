@@ -14,9 +14,13 @@ import { Ai3dError } from "../core/errors.ts";
 import { formatGateReport } from "../pipeline/gates.ts";
 import { buildFromGenerated } from "../pipeline/generative-run.ts";
 import { newRunId, runPaths } from "../pipeline/run.ts";
+import { loadConfig } from "../core/config.ts";
+import { acquireMeshGen, generatorInfo, isGeneratorName } from "../integrations/meshgen/index.ts";
 import { parseGenerativeSpec } from "../spec/generative-spec.ts";
 
 export interface GenTrellisCommandOptions {
+  /** trellis2 (default) or hunyuan3d. */
+  generator?: string;
   imagePath?: string;
   prompt?: string;
   name?: string;
@@ -33,6 +37,15 @@ export async function runGenTrellis(options: GenTrellisCommandOptions): Promise<
   if (!options.imagePath && !options.prompt) {
     throw new Ai3dError("CONFIG_INVALID", "gen-trellis needs --image or --prompt");
   }
+
+  const generator = options.generator ?? "trellis2";
+  if (!isGeneratorName(generator)) {
+    throw new Ai3dError("CONFIG_INVALID", `unknown generator "${generator}" (use trellis2 or hunyuan3d)`);
+  }
+  const info = generatorInfo(generator);
+  if (info.restriction) process.stderr.write(`note: ${info.label} - ${info.restriction}\n`);
+
+  const provider = acquireMeshGen(loadConfig(), generator); // fail before any run directory exists
 
   const runId = options.runId ?? newRunId("gen");
   const rp = runPaths(runId);
@@ -60,13 +73,14 @@ export async function runGenTrellis(options: GenTrellisCommandOptions): Promise<
       ...(imageBasename ? { image: imageBasename } : {}),
       ...(options.prompt ? { prompt: options.prompt } : {}),
     },
-    generator: { name: "trellis2", model: "4B" },
+    generator: { name: info.name, model: info.model },
     object: { name: objectName, category: "generated" },
   });
 
-  process.stderr.write(`\ngenerating "${spec.object.name}" via TRELLIS.2\n`);
+  process.stderr.write(`\ngenerating "${spec.object.name}" via ${info.label}\n`);
   const result = await buildFromGenerated(spec, {
     runId,
+    provider,
     skipExport: options.skipExport === true,
     onStage: (name, detail) => process.stderr.write(`  ${name.padEnd(10)} ${detail}\n`),
   });

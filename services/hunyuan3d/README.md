@@ -29,6 +29,15 @@ the "Tencent Hunyuan 3D Community License Agreement"). Not legal advice.
 - Contrast: TRELLIS.2 is MIT (see `services/trellis/README.md`) and is the
   recommended provider for everyone.
 
+## Using it
+```bash
+cd services/hunyuan3d && pip install fastapi uvicorn python-multipart
+uvicorn app:app --port 8901          # skeleton: /generate returns 501 until you wire the model
+KING3D_GEN_HUNYUAN3D_URL=http://127.0.0.1:8901 node src/cli/index.ts gen-trellis --generator hunyuan3d --image ref.png
+```
+Without `KING3D_GEN_HUNYUAN3D_URL` the generator is off: the dashboard shows it
+disabled and every front end refuses it before creating a run.
+
 ## Status
 Wired as a provider slot only. No Hunyuan3D inference code is included yet;
 implementing `/generate` is gated on the user confirming they are inside the Territory.

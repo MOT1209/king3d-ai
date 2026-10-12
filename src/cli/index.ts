@@ -39,6 +39,7 @@ Options:
   --reference <path>     Reference image to place first on the contact sheet
   --image <path>         Reference image for gen
   --prompt <text>        Text description for gen, when there is no image
+  --generator <name>     Mesh generator for gen-trellis: trellis2 (default) | hunyuan3d
   --hints <text>         Extra context for the analysis stage
   --run-id <id>          Name the run directory instead of timestamping it
   --no-export            Stop after the renders and gates
@@ -63,6 +64,7 @@ async function main(argv: string[]): Promise<number> {
       image: { type: "string" },
       prompt: { type: "string" },
       name: { type: "string" },
+      generator: { type: "string" },
       hints: { type: "string" },
       engine: { type: "string" },
       port: { type: "string" },
@@ -184,6 +186,7 @@ async function main(argv: string[]): Promise<number> {
         ...(values["image"] ? { imagePath: values["image"] as string } : {}),
         ...(values["prompt"] ? { prompt: values["prompt"] as string } : {}),
         ...(values["name"] ? { name: values["name"] as string } : {}),
+        ...(values["generator"] ? { generator: values["generator"] as string } : {}),
         ...(values["run-id"] ? { runId: values["run-id"] as string } : {}),
         skipExport: values["no-export"] === true,
         asJson,

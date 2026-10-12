@@ -63,6 +63,21 @@ import.glb → repair.clean → material.assign (missing only) → uv.unwrap (mi
 - **Gates** — `src/pipeline/generative-gates.ts` (`evaluateGeneratedGates`),
   including the `generative_integrity` gate.
 
+## Other generators
+Generative mode is not tied to TRELLIS.2. Every generator is an HTTP service with the
+same contract (`GET /healthz`, `POST /generate` -> GLB), registered in
+`src/integrations/meshgen/`. Pick one with `--generator` (CLI), the `generator`
+argument (MCP) or the dashboard's Generator list.
+
+| Generator | Licence | Default |
+|---|---|---|
+| `trellis2` | MIT (see above) | on |
+| `hunyuan3d` | Tencent community licence: **excludes the EU, UK and South Korea, including use of the output** | off; set `KING3D_GEN_HUNYUAN3D_URL` |
+
+Hunyuan3D is a slot only: nothing from Tencent is bundled, and an unconfigured
+generator is refused before any run is created. Read
+[`services/hunyuan3d/README.md`](../services/hunyuan3d/README.md) before enabling it.
+
 ## Configuration
 
 | Env var | Default | Meaning |
@@ -71,6 +86,7 @@ import.glb → repair.clean → material.assign (missing only) → uv.unwrap (mi
 | `KING3D_TRELLIS_URL` | `http://127.0.0.1:8900` | Base URL of the service (local or cloud) |
 | `KING3D_TRELLIS_TIMEOUT_MS` | `300000` | Budget for one generation request |
 | `KING3D_TRELLIS_MOCK_GLB` | `tests/fixtures/trellis/base.glb` | Fixture returned in mock mode |
+| `KING3D_GEN_HUNYUAN3D_URL` | unset | Base URL of your own Hunyuan3D service; unset keeps the generator off |
 
 ## Running it
 

@@ -25,7 +25,7 @@ import { createLogger } from "../core/logger.ts";
 import { acquireBackend } from "../integrations/blender/index.ts";
 import { Batch } from "../integrations/blender/backend.ts";
 import type { BatchOutcome, BlenderBackend, JobContext } from "../integrations/blender/backend.ts";
-import { acquireTrellis, type TrellisProvider } from "../integrations/trellis/client.ts";
+import { acquireMeshGen, type MeshGenProvider } from "../integrations/meshgen/index.ts";
 import type { GenerativeSpec } from "../spec/generative-spec.ts";
 import { buildExportVerifyBatch } from "./builder.ts";
 import { evaluateGeneratedGates } from "./generative-gates.ts";
@@ -38,7 +38,7 @@ export interface GenerativeBuildOptions {
   runId?: string;
   config?: Ai3dConfig;
   /** Override the provider (tests inject a mock directly). */
-  provider?: TrellisProvider;
+  provider?: MeshGenProvider;
   skipExport?: boolean;
   onStage?: (name: string, detail: string) => void;
 }
@@ -70,8 +70,8 @@ export async function buildFromGenerated(
   await writeFile(specPath, JSON.stringify(spec, null, 2), "utf8");
 
   // --- generate (the one non-deterministic stage) -------------------------
-  const provider = options.provider ?? acquireTrellis(config);
-  stage("generate", `requesting base mesh from TRELLIS (${provider.kind})`);
+  const provider = options.provider ?? acquireMeshGen(config, spec.generator.name);
+  stage("generate", `requesting base mesh from ${spec.generator.name} (${provider.kind})`);
   // The reference image is copied into the run directory, so a relative
   // source.image resolves against it - keeping the run self-contained.
   const imagePath = spec.source.image
