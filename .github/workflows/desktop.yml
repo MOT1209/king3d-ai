@@ -43,6 +43,7 @@ jobs:
   windows:
     needs: test
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -75,11 +76,30 @@ jobs:
           KING3D_DESKTOP_SMOKE_OUT: ${{ runner.temp }}\smoke-installed.txt
           KING3D_BLENDER_PATH: ${{ runner.temp }}\fake-blender\blender.exe
           KING3D_RUNS_DIR: ${{ runner.temp }}\runs-installed
+        timeout-minutes: 10
+        # `Start-Process -Wait` also waits for every child the process starts, so a silent installer that
+        # launches the app (or an app that leaves a helper behind) hung the first run for hours.
+        # Wait on the process id only, with a deadline, and print what is on disk if it does not finish.
         run: |
+          function Show-State($why) {
+            Write-Host "---- $why"
+            Get-Process | Where-Object { $_.ProcessName -match "King3D|electron|Setup" } | Format-Table Id, ProcessName, StartTime -AutoSize | Out-String | Write-Host
+            if (Test-Path $target) { Get-ChildItem $target | Select-Object -First 30 | ForEach-Object { Write-Host $_.Name } }
+            if (Test-Path $env:KING3D_DESKTOP_SMOKE_OUT) { Get-Content $env:KING3D_DESKTOP_SMOKE_OUT } else { Write-Host "no smoke output file" }
+          }
           $installer = Get-ChildItem apps/desktop/dist -Filter "*Setup*.exe" | Select-Object -First 1
           $target = Join-Path $env:RUNNER_TEMP "King3D-installed"
-          Start-Process -FilePath $installer.FullName -ArgumentList "/S", "/D=$target" -Wait
-          Start-Process -FilePath (Join-Path $target "King3D.exe") -Wait
+          $setup = Start-Process -FilePath $installer.FullName -ArgumentList "/S", "/D=$target" -PassThru
+          if (-not $setup.WaitForExit(180000)) { Show-State "installer did not finish in 180s"; $setup.Kill(); exit 1 }
+          Write-Host "installer exit code: $($setup.ExitCode)"
+          # an installer that starts the app itself would collide with ours (single-instance lock)
+          Start-Sleep -Seconds 5
+          Get-Process -Name "King3D" -ErrorAction SilentlyContinue | Stop-Process -Force
+          Remove-Item $env:KING3D_DESKTOP_SMOKE_OUT -ErrorAction SilentlyContinue
+          $exe = Join-Path $target "King3D.exe"
+          if (-not (Test-Path $exe)) { Show-State "King3D.exe missing after install"; exit 1 }
+          $app = Start-Process -FilePath $exe -PassThru
+          if (-not $app.WaitForExit(120000)) { Show-State "app did not exit in 120s"; Get-Process -Name "King3D" -ErrorAction SilentlyContinue | Stop-Process -Force; exit 1 }
           Get-Content $env:KING3D_DESKTOP_SMOKE_OUT
           if (-not (Select-String -Path $env:KING3D_DESKTOP_SMOKE_OUT -Pattern "SMOKE_OK" -Quiet)) { exit 1 }
       - uses: actions/upload-artifact@v4
